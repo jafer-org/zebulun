@@ -83,7 +83,9 @@ and the Ant output directory might be "classes.ant".-->
   <target depends="javacompile" name="compile"/>
   <target name="postcompile"/>
   <target depends="archive,javadoc,resource" name="package"/>
-  <target name="deploy"/>
+  <target name="deploy">
+    <copy file="zebulun.jar"  tofile="${publishDir}/zebulun-${buildVersion}.jar"/>
+  </target>
   <target depends="precompile,compile,postcompile,package,deploy" name="make"/>
   <target depends="clean,make" name="rebuild"/>
   <target name="init">
