@@ -1,4 +1,5 @@
 * text=auto !eol
+/build.xml -text
 src/asn1/ASN1Any.java -text
 src/asn1/ASN1BitString.java -text
 src/asn1/ASN1Boolean.java -text
