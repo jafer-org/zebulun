@@ -11,11 +11,13 @@
 
 package asn1;
 
+import java.io.*;
+
 //----------------------------------------------------------------
 /**
  * Representation of an ASN.1 OCTET STRING.
  *
- * This class is used to store an ASN.1 OCTET STRING which is an 
+ * This class is used to store an ASN.1 OCTET STRING which is an
  * arbitary string of octets (eight-bit values). An OCTET STRING
  * can have any length including zero. The type is a string type.
  *
@@ -27,7 +29,7 @@ package asn1;
 
 public class ASN1OctetString extends ASN1Any
 {
-  /**
+  /*
    * This constant is the ASN.1 UNIVERSAL tag value for OCTET STRING.
    */
 
@@ -39,7 +41,7 @@ public static final int TAG = 0x04;
    * default of UNIVERSAL 4, and its value to the given bytes.
    */
 
-public 
+public
 ASN1OctetString(byte data[])
   {
     octets = new String(data); // ??? should specify explicit encoding
@@ -52,7 +54,7 @@ ASN1OctetString(byte data[])
    * characters of the given string.
    */
 
-public 
+public
 ASN1OctetString(String str)
   {
     octets = str;
@@ -88,10 +90,10 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
        throws ASN1EncodingException
   {
     if (check_tag) {
-      if (ber_enc.tag_get() != TAG || 
+      if (ber_enc.tag_get() != TAG ||
 	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG)
 	throw new ASN1EncodingException
-	  ("ASN.1 OCTET STRING: bad BER: tag=" + ber_enc.tag_get() + 
+	  ("ASN.1 OCTET STRING: bad BER: tag=" + ber_enc.tag_get() +
 	   " expected " + TAG + "\n");
     }
 
@@ -175,7 +177,12 @@ ber_encode(int tag_type, int tag)
 public ASN1OctetString
 set(byte octet_array[])
   {
-    octets = new String(octet_array); // ??? should specify explicit encoding
+//    octets = new String(octet_array); // ??? should specify explicit encoding
+        try {
+            octets = new String(octet_array, "ISO-8859-1"); // ??? should specify explicit encoding
+        } catch (UnsupportedEncodingException ex) {
+            octets = new String(octet_array); // ??? should specify explicit encoding
+        }
     return this;
   }
 
@@ -231,7 +238,7 @@ get_bytes()
 private static final char oct[] = { '0', '1', '2', '3', '4', '5', '6', '7' };
 
   /**
-   * Returns a new String object representing this ASN.1 object's value. 
+   * Returns a new String object representing this ASN.1 object's value.
    */
 
 public String
@@ -287,7 +294,7 @@ toString()
 	  // Unprintable characters, use octal escape
 
 	  buf.append('\\');
-	
+
 	  buf.append(oct[((octet >> 6) & 0x07)]);
 	  buf.append(oct[((octet >> 3) & 0x07)]);
 	  buf.append(oct[(octet & 0x07)]);
