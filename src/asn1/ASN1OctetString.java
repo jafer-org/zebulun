@@ -44,7 +44,10 @@ public static final int TAG = 0x04;
 public
 ASN1OctetString(byte data[])
   {
-    octets = new String(data); // ??? should specify explicit encoding
+    octets = new byte[data.length];
+    for (int i = 0; i<data.length; i++) {
+        octets[i] = data[i];
+    }
   }
 
   //----------------------------------------------------------------
@@ -57,7 +60,11 @@ ASN1OctetString(byte data[])
 public
 ASN1OctetString(String str)
   {
-    octets = str;
+    try {
+        octets = str.getBytes("ISO-8859-1");
+    } catch (UnsupportedEncodingException ex) {
+        octets = str.getBytes();
+    }
   }
 
   //----------------------------------------------------------------
@@ -107,7 +114,11 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
       for (int x = 0; x < encoding.length; x++)
 	buf.append((char) (encoding[x] & 0x00ff));
 
-      octets = new String(buf);
+    try {
+        octets = new String(buf).getBytes("ISO-8859-1");
+    } catch (UnsupportedEncodingException ex) {
+        octets = new String(buf).getBytes();
+    }
 
     } else {
       // not implemented yet ???
@@ -155,13 +166,13 @@ public BEREncoding
 ber_encode(int tag_type, int tag)
        throws ASN1Exception
   {
-    int size = octets.length();
+    int size = octets.length;
     int encoding[] = new int[size];
 
     // Generate BER encoding of the Octet String
 
     for (int index = 0; index < size; index++)
-      encoding[index] = octets.charAt(index) & 0x00ff;
+      encoding[index] = octets[index] & 0x00ff;
 
     return new BERPrimitive(tag_type, tag, encoding);
   }
@@ -178,11 +189,10 @@ public ASN1OctetString
 set(byte octet_array[])
   {
 //    octets = new String(octet_array); // ??? should specify explicit encoding
-        try {
-            octets = new String(octet_array, "ISO-8859-1"); // ??? should specify explicit encoding
-        } catch (UnsupportedEncodingException ex) {
-            octets = new String(octet_array); // ??? should specify explicit encoding
-        }
+      octets = new byte[octet_array.length];
+      for (int i = 0; i<octet_array.length; i++) {
+          octets[i] = octet_array[i];
+      }
     return this;
   }
 
@@ -197,7 +207,11 @@ set(byte octet_array[])
 public ASN1OctetString
 set(String str)
   {
-    octets = str;
+      try {
+          octets = str.getBytes("ISO-8859-1");
+      } catch (UnsupportedEncodingException ex) {
+          octets = str.getBytes();
+      }
     return this;
   }
 
@@ -211,7 +225,11 @@ set(String str)
 public String
 get()
   {
-    return octets;
+    try {
+        return new String(octets, "ISO-8859-1");
+    } catch (UnsupportedEncodingException ex) {
+        return new String(octets);
+    }
   }
 
   //----------------------------------------------------------------
@@ -224,13 +242,7 @@ get()
 public byte[]
 get_bytes()
   {
-    int size = octets.length();
-    byte bytes[] = new byte[size];
-
-    for (int x = 0; x < size; x++)
-      bytes[x] = (byte) octets.charAt(x);
-
-    return bytes;
+      return octets;
   }
 
   //----------------------------------------------------------------
@@ -244,7 +256,7 @@ private static final char oct[] = { '0', '1', '2', '3', '4', '5', '6', '7' };
 public String
 toString()
   {
-    int size = octets.length();
+    int size = octets.length;
     // Buffer: make it big just in case everything needs to be encoded
     StringBuffer buf = new StringBuffer(32 + (size * 4));
 
@@ -254,7 +266,7 @@ toString()
     int binary = 0;
 
     for (int x = 0; x < size; x++) {
-      char octet = octets.charAt(x);
+      char octet = (char)octets[x];
 
       if ((' ' <= octet && octet <= '~') ||
 	  octet == '\n')
@@ -269,7 +281,7 @@ toString()
       buf.append('"');
 
       for (int x = 0; x < size; x++) {
-	char octet = octets.charAt(x);
+	char octet = (char)octets[x];
 
 	if (' ' <= octet && octet <= '~') {
 	  // Printable character
@@ -308,7 +320,7 @@ toString()
       buf.append('\'');
 
       for (int x = 0; x < size; x++) {
-	char octet = octets.charAt(x);
+	char octet = (char)octets[x];
 	char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		       'a', 'b', 'c', 'd', 'e', 'f' };
 
@@ -328,7 +340,7 @@ toString()
    * the lower bytes are valid.
    */
 
-private String octets;
+private byte[] octets;
 
 } // ASN1OctetString
 
