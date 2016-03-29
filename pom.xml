@@ -21,8 +21,8 @@
   </issueManagement>
 
   <scm>
-  	<url>https://software.ceridwen.com/redmine/projects/jafer/zebulun/repository</url>
-  	<connection>scm:git:https://software.ceridwen.com/redmine/jafer/zebulun.git</connection>
+  	<url>https://software.ceridwen.com/redmine/projects/jafer/repository/zebulun</url>
+  	<connection>scm:git:https://software.ceridwen.com/redmine/zebulun.git</connection>
     <tag>HEAD</tag>
   </scm>
 
