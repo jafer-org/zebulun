@@ -15,12 +15,12 @@ package asn1;
 /**
  * ASN.1 GeneralizedTime
  *
- * The <code>GeneralizedTime<code> type denotes a string corrsponding
+ * The <code>GeneralizedTime</code> type denotes a string corrsponding
  * to an ISO 8601 date string.
  * This type is a string type.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -36,7 +36,10 @@ public static final int TAG = 0x18;
 
   /**
    * Constructor for an GeneralizedTime object. It sets the tag to the
-   * default value of UNIVERSAL 24 (0x18). */
+   * default value of UNIVERSAL 24 (0x18). 
+   * 
+   * @param value time
+   * */
 
 public 
 ASN1GeneralizedTime(String value)

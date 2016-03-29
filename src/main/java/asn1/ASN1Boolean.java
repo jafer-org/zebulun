@@ -19,7 +19,7 @@ package asn1;
  * The BOOLEAN type denotes a Boolean value: either true or false.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -66,7 +66,7 @@ ASN1Boolean(BEREncoding ber, boolean check_tag)
   /**
    * Method for initializing the object from a BER encoding.
    *
-   * @param ber The BER encoding to use.
+   * @param ber_enc The BER encoding to use.
    * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
    * @exception	ASN1EncodingException if the BER encoding is incorrect.
    */
@@ -149,6 +149,7 @@ ber_encode(int tag_type, int tag)
    * Method to set the boolean's value.
    *
    * @param new_val  the value to set the BOOLEAN to.
+   * @return BOOLEAN
    */
 
 public ASN1Boolean

@@ -22,7 +22,7 @@ import java.io.*;
  * It is used for decoding generic BER encodings into ASN.1 objects.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

@@ -36,7 +36,7 @@ import java.util.Vector;
  * @see asn1.BERConstructed
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -98,6 +98,7 @@ output(OutputStream dest) throws java.io.IOException;
    * it off. If you want to just output it, it is more efficient to
    * use the output method.
    *
+   * @return byte array
    * 
    */
 
@@ -112,6 +113,8 @@ encoding_get()
   //----------------------------------------------------------------
   /**
    * Method to examine the tag type of the BER encoded ASN.1 object.
+   * 
+   * @return tag type
    */
 
 public int
@@ -123,6 +126,8 @@ tag_type_get()
   //----------------------------------------------------------------
   /**
    * Method to examine the tag number of the BER encoded ASN.1 object.
+   * 
+   * @return tag number
    */
 
 public int
@@ -134,6 +139,8 @@ tag_get()
   //----------------------------------------------------------------
   /**
    * Returns the total number of bytes the encoding occupies.
+   * 
+   * @return total number of bytes
    */
 
   public int total_length()   {    return i_total_length;  }
@@ -143,7 +150,7 @@ tag_get()
    * The public wrapping for doInput() method.
    *
    * @param	src - the InputStream to read the raw BER from.
-   * @returns	Returns the next complete BEREncoding object read
+   * @return	Returns the next complete BEREncoding object read
    *		in from the input stream. Returns null if the
    *		end has been reached.
    * @exception	ASN1Exception If data does not represent a BER encoding
@@ -174,7 +181,7 @@ public static BEREncoding input(InputStream src) throws ASN1Exception, java.io.I
    *
    * @param	src - the InputStream to read the raw BER from.
    * @param numBytesRead - a counter for all read bytes.
-   * @returns	Returns the next complete BEREncoding object read
+   * @return	Returns the next complete BEREncoding object read
    *		in from the input stream. Returns null if the
    *		end has been reached.
    * @exception	ASN1Exception If data does not represent a BER encoding

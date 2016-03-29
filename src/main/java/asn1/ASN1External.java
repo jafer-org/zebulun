@@ -15,7 +15,7 @@ package asn1;
 /**
  * ASN1 EXTERNAL
  *
- * The <code>EXTERNAL<code> type represents an external object.
+ * The <code>EXTERNAL</code> type represents an external object.
  *
  * According to clause 34.4 of the ASN.1 standard, 
  * the EXTERNAL type can be defined as:
@@ -47,7 +47,7 @@ package asn1;
   * and the rest to null.
   *
   * @version	$Release$ $Date$
-  * @author	Hoylen Sue <h.sue@ieee.org>
+  * @author	Hoylen Sue (h.sue@ieee.org)
   */
 
  //----------------------------------------------------------------

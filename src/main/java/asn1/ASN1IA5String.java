@@ -15,13 +15,13 @@ package asn1;
 /**
  * Representation for ASN.1 IA5String.
  *
- * The <code>IA5String<code> type denotes an arbitary string of IA5
+ * The <code>IA5String</code> type denotes an arbitary string of IA5
  * characters. IA5 stands for International Alphabet 5, which is
  * the same as ASCII. The character set includes non-printing control
  * characters. An IA5String can be of any length, including zero.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 public final class ASN1IA5String extends ASN1OctetString
@@ -36,6 +36,8 @@ public static final int TAG = 0x16;
   /**
    * Constructor for a IA5String object. It sets the tag to the
    * default value of UNIVERSAL 22 (0x16).
+   * 
+   * @param value value
    */
 
 public 

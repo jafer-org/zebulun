@@ -26,7 +26,7 @@ package asn1;
  * use their own encoding for SEQUENCES directly.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -149,6 +149,7 @@ ber_encode(int tag_type, int tag)
    * Method to set the SEQUENCE's elements.
    *
    * @param element_array  an array of ASN.1 object.
+   * @return SEQUENCE
    */
 
 public ASN1Sequence

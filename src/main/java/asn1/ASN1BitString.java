@@ -20,7 +20,7 @@ package asn1;
  * string type.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 public final class ASN1BitString extends ASN1Any
@@ -177,7 +177,7 @@ ber_encode(int tag_type, int tag)
   /**
    * Method to set the bit string's value.
    *
-   * @param	new_val the value to set the BIT STRING to.
+   * @param	new_bits the value to set the BIT STRING to.
    * @return	the object.
    */
 

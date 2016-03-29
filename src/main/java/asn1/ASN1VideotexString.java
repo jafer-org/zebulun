@@ -15,12 +15,12 @@ package asn1;
 /**
  * Representation for an ASN.1 VideotexString.
  *
- * The <code>VideotexString<code> type denotes an arbitary string
+ * The <code>VideotexString</code> type denotes an arbitary string
  * of Videotex characters.
  * This type is a string type.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -36,7 +36,10 @@ public static final int TAG = 0x15;
   //----------------------------------------------------------------
   /**
    * Constructor for an ASN.1 VideotexString object. It sets the tag to the
-   * default value of UNIVERSAL 15 (0x21). */
+   * default value of UNIVERSAL 15 (0x21).
+   *
+   * @param value	VideotexString
+   */
 
 public 
 ASN1VideotexString(String value)

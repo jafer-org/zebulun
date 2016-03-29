@@ -4,7 +4,7 @@
  * $Revision$
  *
  * Copyright (C) 1998, Hoylen Sue.  All Rights Reserved.
- * <h.sue@ieee.org>
+ * (h.sue@ieee.org)
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of

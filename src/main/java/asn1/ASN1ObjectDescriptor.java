@@ -22,7 +22,7 @@ package asn1;
  * ObjectDescriptor ::= [UNIVERSAL 7] IMPLICIT GraphicString
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -39,6 +39,8 @@ public static final int TAG = 0x07;
   /**
    * Constructor for an ObjectDescriptor object. It sets the tag to the
    * default value of UNIVERSAL 7, and the descriptor to the given value.
+   * 
+   * @param descriptor  value
    */
 
 public 
@@ -51,7 +53,7 @@ ASN1ObjectDescriptor(String descriptor)
   /**
    * Constructor for a ObjectDescriptor object from a primitive BER encoding.
    *
-   * @param ber_enc The BER encoding to use.
+   * @param ber The BER encoding to use.
    * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
    * @exception	ASN1Exception if the BER encoding is incorrect.
    */

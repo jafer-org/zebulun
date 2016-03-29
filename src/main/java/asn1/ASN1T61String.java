@@ -15,7 +15,7 @@ package asn1;
 /**
  * Representation for ASN.1 T61String.
  *
- * The <code>T61String<code> type denotes an arbitary string
+ * The <code>T61String</code> type denotes an arbitary string
  * of T.61 characters, or TeletextString. T.61 is an eight-bit extension
  * to the ASCII character set. Special escape sequences specify the
  * interpretation of subsequent character values (e.g. as
@@ -23,7 +23,7 @@ package asn1;
  * any length, including zero. This type is a string type.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

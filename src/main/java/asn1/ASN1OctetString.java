@@ -22,7 +22,7 @@ import java.io.*;
  * can have any length including zero. The type is a string type.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -39,6 +39,8 @@ public static final int TAG = 0x04;
   /**
    * Constructor for an OCTET STRING object. The tag is set to the
    * default of UNIVERSAL 4, and its value to the given bytes.
+   * 
+   * @param data	value
    */
 
 public
@@ -55,6 +57,8 @@ ASN1OctetString(byte data[])
    * Constructor for an OCTET STRING object. The tag is set to the
    * default of UNIVERSAL 4, and its value to the lower bytes of the
    * characters of the given string.
+   * 
+   * @param str	value
    */
 
 public
@@ -181,7 +185,7 @@ ber_encode(int tag_type, int tag)
   /**
    * Method to set the OCTET STRING's value.
    *
-   * @param new_val  the value to set the OCTET STRING to.
+   * @param octet_array  the value to set the OCTET STRING to.
    * @return	the object.
    */
 

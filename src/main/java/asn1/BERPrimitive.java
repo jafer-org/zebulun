@@ -29,7 +29,7 @@ import java.io.*;
  * @see asn1.BEREncoding
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

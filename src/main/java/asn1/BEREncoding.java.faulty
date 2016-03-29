@@ -35,7 +35,7 @@ import java.util.Vector;
  * @see asn1.BERConstructed
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

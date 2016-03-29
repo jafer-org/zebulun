@@ -29,7 +29,7 @@ import java.io.*;
  * @see asn1.BEREncoding
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -89,6 +89,8 @@ output(OutputStream dest)
   /**
    * This method returns the number of BER encoded elements that this
    * object is made up of to be returned.
+   * 
+   * @return number of BER encoded elements
    */
 
 public int
@@ -102,6 +104,8 @@ number_components()
    * This method allows the elements of the BER encoding to be examined.
    * @param	index - the index of the BER object required,
    *            it must be in the range, [0, number_components() - 1]
+   *            
+   * @return BER Encoding
    */
 
 public BEREncoding

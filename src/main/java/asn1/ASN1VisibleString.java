@@ -15,13 +15,13 @@ package asn1;
 /**
  * ASN.1 VisibleString
  *
- * The <code>VisibleString<code> type denotes an arbitary string
+ * The <code>VisibleString</code> type denotes an arbitary string
  * of Visible characters. It is also known as ISO646String, or 
  * InternationalString.
  * This type is a string type.
  *
  * @version	$Release$ $Date$
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -37,7 +37,11 @@ public static final int TAG = 0x1a;
   //----------------------------------------------------------------
   /**
    * Constructor for a VisibleString object. It sets the tag to the
-   * default value of UNIVERSAL 26 (0x1a). */
+   * default value of UNIVERSAL 26 (0x1a). 
+   * 
+   * @param value	VisibleString
+   * 
+   * */
 
 public 
 ASN1VisibleString(String value)
