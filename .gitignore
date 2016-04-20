@@ -1,5 +1,8 @@
-/target/
 .settings
-target
 .classpath
 .project
+target
+dependency-reduced-pom.xml
+.idea
+*.iml
+.sonar_lock
