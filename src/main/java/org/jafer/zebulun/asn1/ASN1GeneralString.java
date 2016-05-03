@@ -27,7 +27,7 @@ public class ASN1GeneralString extends ASN1OctetString {
    * This constant is the UNIVERSAL tag value for GeneralString.
    */
 
-  public final static int TAG = 0x1B;
+  public static final int TAG = 0x1B;
 
   //----------------------------------------------------------------
   /**

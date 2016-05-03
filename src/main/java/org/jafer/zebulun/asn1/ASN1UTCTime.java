@@ -33,7 +33,7 @@ public final class ASN1UTCTime extends ASN1VisibleString {
    * This constant is the UNIVERSAL tag value for UTCTime.
    */
 
-  public final static int TAG = 0x17;
+  public static final int TAG = 0x17;
 
   /**
    * Constructor for an UTCTime object. It sets the tag to the default value of

@@ -47,7 +47,7 @@ public final class ASN1PrintableString extends ASN1OctetString {
    * This constant is the ASN.1 UNIVERSAL tag value for PrintableString.
    */
 
-  public final static int TAG = 0x13;
+  public static final int TAG = 0x13;
 
   //----------------------------------------------------------------
   /**

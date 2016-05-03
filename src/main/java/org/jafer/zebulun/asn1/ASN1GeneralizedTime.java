@@ -28,7 +28,7 @@ public final class ASN1GeneralizedTime extends ASN1VisibleString {
    * This constant is the UNIVERSAL tag value for GeneralizedTime.
    */
 
-  public final static int TAG = 0x18;
+  public static final int TAG = 0x18;
 
   /**
    * Constructor for an GeneralizedTime object. It sets the tag to the default

@@ -30,7 +30,7 @@ public final class ASN1T61String extends ASN1OctetString {
    * This constant is the UNIVERSAL tag value for T61String.
    */
 
-  public final static int TAG = 0x14;
+  public static final int TAG = 0x14;
 
   //----------------------------------------------------------------
   /**

@@ -49,7 +49,7 @@ public final class ASN1External extends ASN1Any {
    * This constant is the ASN.1 UNIVERSAL tag value for an EXTERNAL.
    */
 
-  public final static int TAG = 0x08;
+  public static final int TAG = 0x08;
 
   //----------------------------------------------------------------
   /*
@@ -420,20 +420,20 @@ public final class ASN1External extends ASN1Any {
   // Nested inner-class for parsing XER.
   public static class XER_Parser_Proxy extends XERsaxHandler.XER_Parser_Proxy {
 
-    private final static int STATE_INIT = 0;
-    private final static int STATE_EXTERNAL_GETTING = 1;
-    private final static int STATE_DIRECT_REFERENCE_GETTING = 2;
-    private final static int STATE_DIRECT_REFERENCE_GOT = 3;
-    private final static int STATE_INDIRECT_REFERENCE_GETTING = 4;
-    private final static int STATE_INDIRECT_REFERENCE_GOT = 5;
-    private final static int STATE_DATA_VALUE_DESCRIPTOR_GETTING = 6;
-    private final static int STATE_DATA_VALUE_DESCRIPTOR_GOT = 7;
-    private final static int STATE_ENCODING_GETTING = 8;
-    private final static int STATE_SINGLE_ASN1_TYPE_GETTING = 9;
-    private final static int STATE_OCTET_ALIGNED_GETTING = 10;
-    private final static int STATE_ARBITRARY_GETTING = 11;
-    private final static int STATE_ENCODING_GOT = 12;
-    private final static int STATE_TERM = 13;
+    private static final int STATE_INIT = 0;
+    private static final int STATE_EXTERNAL_GETTING = 1;
+    private static final int STATE_DIRECT_REFERENCE_GETTING = 2;
+    private static final int STATE_DIRECT_REFERENCE_GOT = 3;
+    private static final int STATE_INDIRECT_REFERENCE_GETTING = 4;
+    private static final int STATE_INDIRECT_REFERENCE_GOT = 5;
+    private static final int STATE_DATA_VALUE_DESCRIPTOR_GETTING = 6;
+    private static final int STATE_DATA_VALUE_DESCRIPTOR_GOT = 7;
+    private static final int STATE_ENCODING_GETTING = 8;
+    private static final int STATE_SINGLE_ASN1_TYPE_GETTING = 9;
+    private static final int STATE_OCTET_ALIGNED_GETTING = 10;
+    private static final int STATE_ARBITRARY_GETTING = 11;
+    private static final int STATE_ENCODING_GOT = 12;
+    private static final int STATE_TERM = 13;
 
     private int istate;
     private ASN1External proxy_value;

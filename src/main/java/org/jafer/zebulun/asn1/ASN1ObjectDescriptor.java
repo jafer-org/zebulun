@@ -31,7 +31,7 @@ public final class ASN1ObjectDescriptor extends ASN1GraphicString {
    * This constant is the UNIVERSAL tag value for ObjectDescriptor.
    */
 
-  public final static int TAG = 0x07;
+  public static final int TAG = 0x07;
 
   /**
    * Constructor for an ObjectDescriptor object. It sets the tag to the default

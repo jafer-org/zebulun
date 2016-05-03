@@ -27,7 +27,7 @@ public class ASN1VideotexString extends ASN1OctetString {
    * This constant is the ASN.1 UNIVERSAL tag value for VideotexString.
    */
 
-  public final static int TAG = 0x15;
+  public static final int TAG = 0x15;
 
   //----------------------------------------------------------------
   /**

@@ -28,7 +28,7 @@ public final class ASN1IA5String extends ASN1OctetString {
    * This constant is the ASN.1 UNIVERSAL tag value for IA5String.
    */
 
-  public final static int TAG = 0x16;
+  public static final int TAG = 0x16;
 
   //----------------------------------------------------------------
   /**

@@ -32,7 +32,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    * This constant is the ASN.1 UNIVERSAL tag value for OBJECT IDENTIFIER.
    */
 
-  public final static int TAG = 0x06;
+  public static final int TAG = 0x06;
 
   //----------------------------------------------------------------
   /**
@@ -297,10 +297,10 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
   // Nested inner-class for parsing XER.
   public static class XER_Parser_Proxy extends XERsaxHandler.XER_Parser_Proxy {
 
-    private final static int STATE_INIT = 0;
-    private final static int STATE_START_GOT = 1;
-    private final static int STATE_VALUE_GOT = 2;
-    private final static int STATE_TERM = 3;
+    private static final int STATE_INIT = 0;
+    private static final int STATE_START_GOT = 1;
+    private static final int STATE_VALUE_GOT = 2;
+    private static final int STATE_TERM = 3;
 
     private int state;
 

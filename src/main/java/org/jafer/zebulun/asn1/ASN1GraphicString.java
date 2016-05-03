@@ -27,7 +27,7 @@ public class ASN1GraphicString extends ASN1OctetString {
    * This constant is the UNIVERSAL tag value for GraphicString.
    */
 
-  public final static int TAG = 0x19;
+  public static final int TAG = 0x19;
 
   //----------------------------------------------------------------
   /**

@@ -42,7 +42,7 @@ public final class ASN1Set extends ASN1Any {
    * SET OF type.
    */
 
-  public final static int TAG = 0x11;
+  public static final int TAG = 0x11;
 
   //----------------------------------------------------------------
   /**
@@ -168,6 +168,7 @@ public final class ASN1Set extends ASN1Any {
   /**
    * @return a new String object representing this ASN.1 object's value.
    */
+  @Override
   public String
           toString() {
     StringBuffer str = new StringBuffer("{");

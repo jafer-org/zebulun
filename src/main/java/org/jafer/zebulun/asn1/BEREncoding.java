@@ -41,29 +41,29 @@ public abstract class BEREncoding {
    * Constant for indicating UNIVERSAL tag type. The value matches the BER bit
    * encoding. Universal tags are for types defined in the ASN.1 standard.
    */
-  public final static int UNIVERSAL_TAG = 0x00;
+  public static final int UNIVERSAL_TAG = 0x00;
 
   /**
    * Constant for indicating APPLICATION tag type. The value matches the BER bit
    * encoding. APPLICATION tags are globally unique to an application.
    */
-  public final static int APPLICATION_TAG = 0x40;
+  public static final int APPLICATION_TAG = 0x40;
 
   /**
    * Constant for indicating CONTEXT SPECIFIC tag type. The value matches the
    * BER bit encoding. CONTEXT SPECIFIC tags are used in applications, but do
    * not have to be globally unique.
    */
-  public final static int CONTEXT_SPECIFIC_TAG = 0x80;
+  public static final int CONTEXT_SPECIFIC_TAG = 0x80;
 
   /**
    * Constant for indicating PRIVATE tag type. The value matches the BER bit
    * encoding.
    */
-  public final static int PRIVATE_TAG = 0xC0;
+  public static final int PRIVATE_TAG = 0xC0;
 
   //----------------------------------------------------------------
-  private final static int MAX_BER_SIZE = 65536;
+  private static final int MAX_BER_SIZE = 65536;
 
   //----------------------------------------------------------------
   /**
@@ -498,7 +498,7 @@ public abstract class BEREncoding {
   }
 
   //----------------------------------------------------------------
-  private final static char[] hex = {
+  private static final char[] hex = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };

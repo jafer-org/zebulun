@@ -28,7 +28,7 @@ public class ASN1VisibleString extends ASN1OctetString {
    * This constant is the ASN.1 UNIVERSAL tag value for VisibleString.
    */
 
-  public final static int TAG = 0x1a;
+  public static final int TAG = 0x1a;
 
   //----------------------------------------------------------------
   /**

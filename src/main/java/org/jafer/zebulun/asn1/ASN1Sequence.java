@@ -38,7 +38,7 @@ public final class ASN1Sequence extends ASN1Any {
    * a SEQUENCE OF type.
    */
 
-  public final static int TAG = 0x10;
+  public static final int TAG = 0x10;
 
   //----------------------------------------------------------------
   /**

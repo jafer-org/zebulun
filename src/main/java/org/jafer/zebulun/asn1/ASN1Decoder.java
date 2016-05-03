@@ -23,6 +23,9 @@ package org.jafer.zebulun.asn1;
  */
 //----------------------------------------------------------------
 public class ASN1Decoder {
+  
+  private ASN1Decoder() {    
+  }
 
   public static ASN1Any
           toASN1(BEREncoding ber)

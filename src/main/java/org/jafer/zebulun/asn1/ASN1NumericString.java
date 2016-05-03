@@ -27,7 +27,7 @@ public class ASN1NumericString extends ASN1OctetString {
    * This constant is the ASN.1 UNIVERSAL tag value for NumericString.
    */
 
-  public final static int TAG = 0x12;
+  public static final int TAG = 0x12;
 
   //----------------------------------------------------------------
   /**
