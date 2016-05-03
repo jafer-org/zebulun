@@ -403,6 +403,7 @@ sub java_ber_decode {
 
   # The code for the method
 
+  print $fp "\@Override\n";
   print $fp "public void\n";
   print $fp "ber_decode(BEREncoding ber, boolean check_tag)\n";
   print $fp "       throws ASN1Exception\n";
@@ -1050,6 +1051,7 @@ sub java_ber_encode_nonchoice {
 
   # The code for the method without any extra tagging
 
+  print $fp "\@Override\n";
   print $fp "public BEREncoding\n";
   print $fp "ber_encode()\n";
   print $fp "       throws ASN1Exception\n";
@@ -1116,6 +1118,7 @@ sub java_ber_encode_nonchoice {
       die "$prog: unexpected sequence to have no components at all\n";
     }
 
+    print $fp "\@Override\n";
     print $fp "public BEREncoding\n";
     print $fp "ber_encode(int tag_type, int tag)\n";
     print $fp "       throws ASN1Exception\n";
@@ -1221,7 +1224,13 @@ sub java_ber_encode_nonchoice {
 	  } else {
 	    # Implicit tag ordinary type
 
-	    print $fp "  " if ($opt);
+	  if ($opt) {
+      print $fp "  ";
+    } else {
+      print $fp "  if ($variable == null) {\n";
+      print $fp "    throw new ASN1EncodingException(\"Zebulun ", $class_name, ": required field missing: ", $variable, "\");\n";
+      print $fp "  }\n";
+    }
 	    print $fp "  fields[x++] = ";
 	    print $fp "$variable\.ber_encode(BEREncoding.", $tag_class, "_TAG, $tag_num);\n";
 	  }
@@ -1289,7 +1298,13 @@ sub java_ber_encode_nonchoice {
 	} else {
 	  # No tag ordinary type
 
-	  print $fp "  " if ($opt);
+	  if ($opt) {
+      print $fp "  ";
+    } else {
+      print $fp "  if ($variable == null) {\n";
+      print $fp "    throw new ASN1EncodingException(\"Zebulun ", $class_name, ": required field missing: ", $variable, "\");\n";
+      print $fp "  }\n";
+    }
 	  print $fp "  fields[x++] = $variable\.ber_encode();\n";
 	}
       }
@@ -1310,6 +1325,7 @@ sub java_ber_encode_nonchoice {
   } elsif ($type eq "SEQUENCE OF") {
     # Code for encoding SEQUENCE OF
 
+    print $fp "\@Override\n";
     print $fp "public BEREncoding\n";
     print $fp "ber_encode(int tag_type, int tag)\n";
     print $fp "       throws ASN1Exception\n";
@@ -1332,6 +1348,7 @@ sub java_ber_encode_nonchoice {
   } else {
     # Simple type encoding
 
+    print $fp "\@Override\n";
     print $fp "public BEREncoding\n";
     print $fp "ber_encode(int tag_type, int tag)\n";
     print $fp "       throws ASN1Exception\n";
@@ -1406,6 +1423,7 @@ sub java_ber_encode_choice {
 
   # The code for the method without extra tagging
 
+  print $fp "\@Override\n";
   print $fp "public BEREncoding\n";
   print $fp "ber_encode()\n";
   print $fp "       throws ASN1Exception\n";
@@ -1440,6 +1458,7 @@ sub java_ber_encode_choice {
     my($type, $type_value, $type_value1) = $def_ref->type_get();
     die "$prog: internal error: encoding complex\n" if (defined($type_value1));
 
+    print $fp "\@Override\n";
     print $fp "public BEREncoding\n";
     print $fp "ber_encode(int tag_type, int tag)\n";
     print $fp "       throws ASN1Exception\n";
@@ -1640,10 +1659,12 @@ sub java_ber_encode_choice {
     print $fp " *\n";
     print $fp " * \@param tag_type the type of the tag.\n";
     print $fp " * \@param tag the tag.\n";
+    print $fp " * \@return will	never return as will always throw an\n";
     print $fp " * \@exception ASN1Exception if it cannot be BER encoded.\n";
     print $fp " */\n";
     print $fp "\n";
 
+    print $fp "\@Override\n";
     print $fp "public BEREncoding\n";
     print $fp "ber_encode(int tag_type, int tag)\n";
     print $fp "       throws ASN1Exception\n";
@@ -2666,6 +2687,7 @@ sub java_toString {
   print $fp " * \@return a string representation of this $class_name.\n";
   print $fp " */\n";
   print $fp "\n";
+  print $fp "\@Override\n";
   print $fp "public String\n";
   print $fp "toString()\n";
   print $fp "{\n";
@@ -2692,7 +2714,7 @@ sub java_toString {
       }
     }
 
-    print $fp "  StringBuffer str = new StringBuffer(\"{\");\n";
+    print $fp "  StringBuilder str = new StringBuilder(\"{\");\n";
     print $fp "  int outputted = 0;\n";
     print $fp "\n";
 
@@ -2778,7 +2800,7 @@ sub java_toString {
 
     my $variable = var_name($def_ref->name_get());
 
-    print $fp "  StringBuffer str = new StringBuffer(\"{\");\n";
+    print $fp "  StringBuilder str = new StringBuilder(\"{\");\n";
     print $fp "  int p;\n";
     print $fp "\n";
 
@@ -2811,7 +2833,7 @@ sub java_toString {
       }
     }
 
-    print $fp "  StringBuffer str = new StringBuffer(\"{\");\n";
+    print $fp "  StringBuilder str = new StringBuilder(\"{\");\n";
     print $fp "\n";
 
     # Generate code for converting the element of a choice to string
@@ -2917,6 +2939,10 @@ sub java_variables {
       my $variable = seq_var_name($ename, $count);
       # The java member declaration
 
+    print $fp "/**\n";
+    print $fp " * ", $variable, "\n";
+    print $fp " */\n";
+
       if ($etype eq "CHOICE" || $etype eq "SEQUENCE") {
 	die "$prog: internal error: choice or sequence in sequence\n";
       }
@@ -2936,6 +2962,10 @@ sub java_variables {
   } elsif ($type eq "SEQUENCE OF" ||
 	   $type eq "SET OF") {
     # Variables for a sequence of
+
+    print $fp "/**\n";
+    print $fp " * ", var_name($ename), "\n";
+    print $fp " */\n";
 
     print $fp "public ", java_class($type_value), " ",var_name($ename),"[];\n";
 
@@ -2957,6 +2987,10 @@ sub java_variables {
 
       $count++;
       my $variable = choice_var_name($ename, $count);
+
+    print $fp "/**\n";
+    print $fp " * ", $variable, "\n";
+    print $fp " */\n";
 
       if ($element->is_optional()) {
 	die "$prog: internal error: $class_name: choice has optional element!";
@@ -3067,6 +3101,9 @@ sub java_constants {
 	    my $constant_name = $_;
 	    $constant_name =~ s/\-/\_/g;
 
+      print $fp "/**\n";
+      print $fp " * ", $constant_name, "\n";
+      print $fp " */\n";
 	    print $fp "public static final int E_$constant_name = $evalues{$_};\n";
 	    print $fp "\n";
 	  }
@@ -3113,6 +3150,9 @@ sub java_constants {
       foreach (sort { $evalues{$a} <=> $evalues{$b}; } (keys(%evalues))) {
 	my $constant_name = $_;
 	$constant_name =~ s/\-/\_/g;
+  print $fp "/**\n";
+  print $fp " * ", $constant_name, "\n";
+  print $fp " */\n";
 	print $fp "public static final int E_$constant_name = $evalues{$_};\n";
       }
       print $fp "\n";
