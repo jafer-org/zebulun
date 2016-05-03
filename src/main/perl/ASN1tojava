@@ -205,7 +205,7 @@ sub java_header {
   local($fp,
 	$module_reference,
 	$root_hier, $module_fullname, $class_name,
-	$def_ref, $imports_ref) = @_;
+	$def_ref, $imports_ref, $version) = @_;
 
   # $root_hier = "zebulun"
   # $module_fullname = "z3950_v3.apdu"
@@ -219,13 +219,8 @@ sub java_header {
   # Header of comments and copyright notice
 
   print $fp "/*\n";
-  print $fp " * \$Source\$\n";
-  print $fp " * \$Date\$\n";
-  print $fp " * \$Revision\$\n";
-  print $fp " * \$Name\$\n";
-  print $fp " *\n";
   print $fp " * Copyright (C) $year, Hoylen Sue.  All Rights Reserved.\n";
-  print $fp " * <h.sue\@ieee.org>\n";
+  print $fp " * (h.sue\@ieee.org)\n";
   print $fp " *\n";
   print $fp " * This program is distributed in ";
   print $fp "the hope that it will be useful,\n";
@@ -282,7 +277,8 @@ sub java_header {
   print $fp $def_ref->toString(" * ");
   print $fp " * </pre>\n";
   print $fp " *\n";
-  print $fp " * \@version	\$Release\$ \$Date\$\n";
+  print $fp " * \@version	$version ";
+  printf $fp ("%04d-%02d-%02d\n", $year, $mon + 1, $mday);
   print $fp " */\n";
   print $fp "\n";
 
@@ -2667,7 +2663,7 @@ sub java_toString {
   print $fp " * Converts this $class_name object to a <code>String</code>\n";
   print $fp " * representation.\n";
   print $fp " *\n";
-  print $fp " * \@returns a string representation of this $class_name.\n";
+  print $fp " * \@return a string representation of this $class_name.\n";
   print $fp " */\n";
   print $fp "\n";
   print $fp "public String\n";
@@ -3141,7 +3137,7 @@ sub java_footer {
 sub generate_java_file {
   my($module_reference,
      $root_hier, $module_fullname, $name,
-     $def_ref, $imports_ref) = @_;
+     $def_ref, $imports_ref, $version) = @_;
 
   $name = java_class($name);
 
@@ -3150,7 +3146,7 @@ sub generate_java_file {
   java_header(JAVA,
 	      $module_reference,
 	      $root_hier, $module_fullname, $name,
-	      $def_ref, $imports_ref);
+	      $def_ref, $imports_ref, $version);
 
   java_constants(JAVA, $name, $def_ref);
   java_variables(JAVA, $name, $def_ref);
@@ -3177,7 +3173,7 @@ sub generate_java_file {
 sub process_production {
   my($module_reference,
      $root_hier, $module_fullname, $production,
-     $def_ref, $imports_ref, $quiet, $verbose, $doit) = @_;
+     $def_ref, $imports_ref, $quiet, $verbose, $doit, $version) = @_;
 
   # Possible alias for production
 
@@ -3203,15 +3199,15 @@ sub process_production {
   if ($doit) {
     generate_java_file($module_reference,
 		       $root_hier, $module_fullname, $production,
-		       $def_ref, $imports_ref);
+		       $def_ref, $imports_ref, $version);
   }
 }
 
 #----------------------------------------------------------------
 
 sub process_module {
-  my($root_hier, $module_reference, $mod_oid, $def_ref, $imports_ref,
-     $quiet, $verbose, $doit) = @_;
+  my($output_dir, $root_hier, $module_reference, $mod_oid, $def_ref, $imports_ref,
+     $quiet, $verbose, $doit, $version) = @_;
   my(%defs) = %{$def_ref};
 
   # Possible alias for module
@@ -3227,9 +3223,10 @@ sub process_module {
   }
 
   my @path_names = split(/\./, $module_fullname);
+  my @root_path_names = split(/\./, $root_hier);
   my $module_name = $path_names[$#path_names]; # use last name in path
 
-  my $module_path = "./" . join('/', @path_names);
+  my $module_path = $output_dir . '/' . join('/', @root_path_names) . '/'. join('/', @path_names);
 
   # Flatten the module
 
@@ -3259,7 +3256,7 @@ sub process_module {
     process_production($module_reference,
 		       $root_hier, $module_fullname,
 		       $production, $defs{$production}, $imports_ref,
-		       $quiet, $verbose, $doit);
+		       $quiet, $verbose, $doit, $version);
     $count++;
   }
 
@@ -3281,6 +3278,8 @@ sub process_arguments {
   # Process command line switches
 
   $opt_root = "zebulun"; # default value
+  $opt_out = "./"; #default value
+  $opt_version = "1.7";
 
   my($result) = GetOptions ("debugparser",
 			    "debugtokens",
@@ -3288,6 +3287,8 @@ sub process_arguments {
 			    "noaction",
 			    "modules",
 			    "root=s",
+          "out=s",
+			    "version=s",
 			    "xer",
 			    "quiet",
 			    "verbose");
@@ -3300,6 +3301,7 @@ sub process_arguments {
     print "Usage: $prog [options] [asn1file]\n";
     print "Options: (can be abbreviated)\n";
     print "  -root root           the root path (dot separated)\n";
+    print "  -out path            the output path\n";
     print "  -xer                 generate XER code (experimental feature)\n";
     print "  -debugtokens         dump debug trace for tokenizer\n";
     print "  -debugparser         dump debug trace for the ASN.1 parser\n";
@@ -3347,13 +3349,13 @@ sub process_arguments {
     die "$prog: Usage error: too many arguments (-h for help)\n";
   }
   
-  return ($srcfile, $opt_root, $opt_quiet, $opt_verbose, (! $opt_noaction));
+  return ($srcfile, $opt_out, $opt_root, $opt_quiet, $opt_verbose, (! $opt_noaction), $opt_version);
 }
 
 #----------------------------------------------------------------
 
 sub main {
-  my($filename, $root_hier, $quiet, $verbose, $doit) = process_arguments();
+  my($filename, $opt_out, $root_hier, $quiet, $verbose, $doit, $version) = process_arguments();
 
   # Load in the ASN.1
 
@@ -3365,9 +3367,9 @@ sub main {
   my $total_productions = 0;
   foreach (@modules) {
     my($module_reference, $mod_oid, $def_ref, $imports_ref) = @$_;
-    $total_productions += process_module($root_hier, $module_reference, 
+    $total_productions += process_module($opt_out, $root_hier, $module_reference, 
 					 $mod_oid, $def_ref, $imports_ref,
-					 $quiet, $verbose, $doit);
+					 $quiet, $verbose, $doit, $version);
   }
 
   if (! $quiet) {
