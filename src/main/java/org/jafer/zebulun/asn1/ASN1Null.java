@@ -60,6 +60,7 @@ public final class ASN1Null extends ASN1Any {
    * tagged.
    * @exception	ASN1EncodingException If the BER encoding is incorrect.
    */
+  @Override
   public void
           ber_decode(BEREncoding ber_enc, boolean check_tag)
           throws ASN1EncodingException {
@@ -86,6 +87,7 @@ public final class ASN1Null extends ASN1Any {
    * @return	The BER encoding of the NULL
    * @exception	ASN1Exception when the NULL is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -99,6 +101,7 @@ public final class ASN1Null extends ASN1Any {
    * @return	The BER encoding of the NULL
    * @exception	ASN1Exception when the NULL is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode(int tag_type, int tag)
           throws ASN1Exception {
@@ -108,8 +111,9 @@ public final class ASN1Null extends ASN1Any {
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value.
+   * @return a new String object representing this ASN.1 object's value.
    */
+  @Override
   public String
           toString() {
     return "null";
@@ -124,6 +128,7 @@ public final class ASN1Null extends ASN1Any {
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
+  @Override
   public void
           xer_encode(java.io.PrintWriter dest)
           throws ASN1Exception {
@@ -151,6 +156,7 @@ public final class ASN1Null extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void startElement(XERsaxHandler handler,
             String name,
             org.xml.sax.AttributeList atts)
@@ -165,6 +171,7 @@ public final class ASN1Null extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void endElement(XERsaxHandler handler,
             String name)
             throws org.xml.sax.SAXException {

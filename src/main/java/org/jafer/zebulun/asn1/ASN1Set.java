@@ -11,6 +11,9 @@
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
+
+import java.util.Arrays;
+
 /**
  * Representation of an ASN.1 SET.
  * <p>
@@ -49,7 +52,7 @@ public final class ASN1Set extends ASN1Any {
    * @param element_array Elements in the set.
    */
   public ASN1Set(ASN1Any[] element_array) {
-    elements = element_array;
+    elements = Arrays.copyOf(element_array, element_array.length);
   }
 
   //----------------------------------------------------------------
@@ -75,6 +78,7 @@ public final class ASN1Set extends ASN1Any {
    * tagged.
    * @exception	ASN1Exception If the BER encoding is incorrect.
    */
+  @Override
   public void
           ber_decode(BEREncoding ber_enc, boolean check_tag)
           throws ASN1Exception {
@@ -108,6 +112,7 @@ public final class ASN1Set extends ASN1Any {
    * @return	The BER encoding of the SET
    * @exception	ASN1Exception when the SET is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -123,6 +128,7 @@ public final class ASN1Set extends ASN1Any {
    * @return	The BER encoding of the SET
    * @exception	ASN1Exception when the SET is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode(int tag_type, int tag)
           throws ASN1Exception {
@@ -144,7 +150,7 @@ public final class ASN1Set extends ASN1Any {
    */
   public void
           set(ASN1Any[] element_array) {
-    elements = element_array;
+    elements = Arrays.copyOf(element_array, element_array.length);
   }
 
   //----------------------------------------------------------------
@@ -155,12 +161,12 @@ public final class ASN1Set extends ASN1Any {
    */
   public ASN1Any[]
           get() {
-    return elements;
+    return Arrays.copyOf(elements, elements.length);
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value.
+   * @return a new String object representing this ASN.1 object's value.
    */
   public String
           toString() {

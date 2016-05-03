@@ -11,6 +11,9 @@
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
+
+import java.util.Arrays;
+
 /**
  * Representation of an ASN.1 <code>BIT STRING</code>
  *
@@ -43,7 +46,7 @@ public final class ASN1BitString extends ASN1Any {
    * @param	bit_values - array of booleans representing the bit string.
    */
   public ASN1BitString(boolean[] bit_values) {
-    bits = bit_values;
+    bits = Arrays.copyOf(bit_values, bit_values.length);
   }
 
   //----------------------------------------------------------------
@@ -69,6 +72,7 @@ public final class ASN1BitString extends ASN1Any {
    * tagged.
    * @exception	ASN1EncodingException If the BER encoding is incorrect.
    */
+  @Override
   public void
           ber_decode(BEREncoding ber_enc, boolean check_tag)
           throws ASN1EncodingException {
@@ -120,6 +124,7 @@ public final class ASN1BitString extends ASN1Any {
    * @exception	ASN1Exception when the BIT STRING is invalid and cannot be
    * encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -136,6 +141,7 @@ public final class ASN1BitString extends ASN1Any {
    * @exception	ASN1Exception when the BIT STRING is invalid and cannot be
    * encoded.
    */
+  @Override
   public BEREncoding
           ber_encode(int tag_type, int tag)
           throws ASN1Exception {
@@ -173,7 +179,7 @@ public final class ASN1BitString extends ASN1Any {
    */
   public ASN1BitString
           set(boolean[] new_bits) {
-    bits = new_bits;
+    bits = Arrays.copyOf(new_bits, new_bits.length);
     return this;
   }
 
@@ -185,7 +191,7 @@ public final class ASN1BitString extends ASN1Any {
    */
   public boolean[]
           get() {
-    return bits;
+    return Arrays.copyOf(bits, bits.length);
   }
 
   //----------------------------------------------------------------
@@ -194,9 +200,10 @@ public final class ASN1BitString extends ASN1Any {
    *
    * @return	A text string representation of the BitString.
    */
+  @Override
   public String
           toString() {
-    StringBuffer str = new StringBuffer();
+    StringBuilder str = new StringBuilder();
 
     str.append('\'');
     for (int x = 0; x < bits.length; x++) {
@@ -216,6 +223,7 @@ public final class ASN1BitString extends ASN1Any {
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
+  @Override
   public void
           xer_encode(java.io.PrintWriter dest)
           throws ASN1Exception {
@@ -249,6 +257,7 @@ public final class ASN1BitString extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void startElement(XERsaxHandler handler,
             String name,
             org.xml.sax.AttributeList atts)
@@ -264,6 +273,7 @@ public final class ASN1BitString extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void endElement(XERsaxHandler handler,
             String name)
             throws org.xml.sax.SAXException {
@@ -274,7 +284,7 @@ public final class ASN1BitString extends ASN1Any {
         int size = proxy_value.size();
         boolean[] a_value = new boolean[size];
         for (int x = 0; x < size; x++) {
-          a_value[x] = ((java.lang.Boolean) proxy_value.elementAt(x)).booleanValue();
+          a_value[x] = ((java.lang.Boolean) proxy_value.elementAt(x));
         }
         handler.member_got(new ASN1BitString(a_value));
 
@@ -286,6 +296,7 @@ public final class ASN1BitString extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void characters(XERsaxHandler handler,
             char[] ch,
             int start,
@@ -299,11 +310,11 @@ public final class ASN1BitString extends ASN1Any {
         while (begin < end) {
           char character = ch[begin];
           if (character == '0') {
-            proxy_value.addElement(new java.lang.Boolean(false));
+            proxy_value.addElement(false);
             state = STATE_VALUE_GOT;
 
           } else if (character == '1') {
-            proxy_value.addElement(new java.lang.Boolean(true));
+            proxy_value.addElement(true);
             state = STATE_VALUE_GOT;
 
           } else if (Character.isWhitespace(character)) {

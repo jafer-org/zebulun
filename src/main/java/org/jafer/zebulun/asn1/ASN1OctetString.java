@@ -11,6 +11,7 @@
 package org.jafer.zebulun.asn1;
 
 import java.io.*;
+import java.util.Arrays;
 
 //----------------------------------------------------------------
 /**
@@ -41,9 +42,7 @@ public class ASN1OctetString extends ASN1Any {
    */
   public ASN1OctetString(byte[] data) {
     octets = new byte[data.length];
-    for (int i = 0; i < data.length; i++) {
-      octets[i] = data[i];
-    }
+    System.arraycopy(data, 0, octets, 0, data.length);
   }
 
   //----------------------------------------------------------------
@@ -84,6 +83,7 @@ public class ASN1OctetString extends ASN1Any {
    * @param check_tag If true, it checks the tag. Does nothing for ASN1Any.
    * @exception	ASN1EncodingException If the BER cannot be decoded.
    */
+  @Override
   public void
           ber_decode(BEREncoding ber_enc, boolean check_tag)
           throws ASN1EncodingException {
@@ -100,7 +100,7 @@ public class ASN1OctetString extends ASN1Any {
 
       int[] encoding = ber.peek();
 
-      StringBuffer buf = new StringBuffer(encoding.length);
+      StringBuilder buf = new StringBuilder(encoding.length);
 
       for (int x = 0; x < encoding.length; x++) {
         buf.append((char) (encoding[x] & 0x00ff));
@@ -130,6 +130,7 @@ public class ASN1OctetString extends ASN1Any {
    * @exception	ASN1Exception when the OCTET STRING is invalid and cannot be
    * encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -147,6 +148,7 @@ public class ASN1OctetString extends ASN1Any {
    * @exception	ASN1Exception when the OCTET STRING is invalid and cannot be
    * encoded.
    */
+  @Override
   public BEREncoding
           ber_encode(int tag_type, int tag)
           throws ASN1Exception {
@@ -172,9 +174,7 @@ public class ASN1OctetString extends ASN1Any {
           set(byte[] octet_array) {
 
     octets = new byte[octet_array.length];
-    for (int i = 0; i < octet_array.length; i++) {
-      octets[i] = octet_array[i];
-    }
+    System.arraycopy(octet_array, 0, octets, 0, octet_array.length);
     return this;
   }
 
@@ -218,7 +218,7 @@ public class ASN1OctetString extends ASN1Any {
    */
   public byte[]
           get_bytes() {
-    return octets;
+    return Arrays.copyOf(octets, octets.length);
   }
 
   //----------------------------------------------------------------
@@ -226,14 +226,15 @@ public class ASN1OctetString extends ASN1Any {
     '0', '1', '2', '3', '4', '5', '6', '7'
   };
 
-  public final static char[] hex = {
+  private final static char[] hex = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };
 
   /**
-   * Returns a new String object representing this ASN.1 object's value.
+   * @return a new String object representing this ASN.1 object's value.
    */
+  @Override
   public String
           toString() {
     int size = octets.length;
@@ -329,6 +330,7 @@ public class ASN1OctetString extends ASN1Any {
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
+  @Override
   public void
           xer_encode(java.io.PrintWriter dest)
           throws ASN1Exception {
@@ -400,6 +402,7 @@ public class ASN1OctetString extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void startElement(XERsaxHandler handler,
             String name,
             org.xml.sax.AttributeList atts)
@@ -416,6 +419,7 @@ public class ASN1OctetString extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void endElement(XERsaxHandler handler,
             String name)
             throws org.xml.sax.SAXException {
@@ -433,6 +437,7 @@ public class ASN1OctetString extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void characters(XERsaxHandler handler,
             char[] ch,
             int start,

@@ -11,6 +11,9 @@
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
+
+import java.util.Arrays;
+
 /**
  * Representation of an ASN.1 OBJECT IDENTIFIER.
  *
@@ -46,7 +49,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    * @param oid_value	value
    */
   public ASN1ObjectIdentifier(int[] oid_value) {
-    oid = oid_value;
+    oid = Arrays.copyOf(oid_value, oid_value.length);
   }
 
   //----------------------------------------------------------------
@@ -72,6 +75,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    * tagged.
    * @exception	ASN1EncodingException If the BER encoding cannot be decoded.
    */
+  @Override
   public void
           ber_decode(BEREncoding ber_enc, boolean check_tag)
           throws ASN1EncodingException {
@@ -140,6 +144,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    * components, the first has values of (0, 1, or 2) and the second between 0
    * and 39 inclusive.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -157,6 +162,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    * components, the first has values of (0, 1, or 2) and the second between 0
    * and 39 inclusive.
    */
+  @Override
   public BEREncoding
           ber_encode(int tag_type, int tag)
           throws ASN1Exception {
@@ -229,7 +235,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    */
   public ASN1ObjectIdentifier
           set(int[] new_val) {
-    oid = new_val;
+    oid = Arrays.copyOf(new_val, new_val.length);
     return this;
   }
 
@@ -242,13 +248,14 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    */
   public int[]
           get() {
-    return oid;
+    return Arrays.copyOf(oid, oid.length);
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value.
+   * @return a new String object representing this ASN.1 object's value.
    */
+  @Override
   public String
           toString() {
     StringBuffer str = new StringBuffer();
@@ -273,6 +280,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
+  @Override
   public void
           xer_encode(java.io.PrintWriter dest)
           throws ASN1Exception {
@@ -310,6 +318,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void startElement(XERsaxHandler handler,
             String name,
             org.xml.sax.AttributeList atts)
@@ -324,6 +333,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void endElement(XERsaxHandler handler,
             String name)
             throws org.xml.sax.SAXException {
@@ -339,6 +349,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
     }
 
     //----------------
+    @Override
     public void characters(XERsaxHandler handler,
             char[] ch,
             int start,
@@ -373,7 +384,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
                 handler.throw_characters_unexpected(xer_tag);
               }
 
-              vect.addElement(new java.lang.Integer(component));
+              vect.addElement(component);
             } catch (java.lang.NumberFormatException ex) {
               handler.throw_characters_unexpected(xer_tag);
             }
@@ -386,7 +397,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
           int size = vect.size();
           proxy_value = new int[size];
           for (int x = 0; x < size; x++) {
-            proxy_value[x] = ((java.lang.Integer) vect.elementAt(x)).intValue();
+            proxy_value[x] = ((java.lang.Integer) vect.elementAt(x));
           }
 
           // Check that remaining characters are all whitespace

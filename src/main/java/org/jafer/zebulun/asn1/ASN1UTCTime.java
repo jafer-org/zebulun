@@ -74,6 +74,7 @@ public final class ASN1UTCTime extends ASN1VisibleString {
    * @return	The BER encoding
    * @exception	ASN1Exception when the object is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {

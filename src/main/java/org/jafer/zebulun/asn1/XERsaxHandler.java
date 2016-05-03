@@ -185,6 +185,7 @@ public class XERsaxHandler extends HandlerBase {
    * @param atts attribute list.
    * @exception SAXException on error.
    */
+  @Override
   public void startElement(String qualified_name, AttributeList atts)
           throws SAXException {
     //System.out.println("DEBUG: <" + qualified_name + ">");
@@ -213,6 +214,7 @@ public class XERsaxHandler extends HandlerBase {
    * @param qualified_name XML tag name (including namespace prefix).
    * @exception SAXException on error.
    */
+  @Override
   public void endElement(String qualified_name)
           throws SAXException {
     //System.out.println("DEBUG: </" + qualified_name + ">");
@@ -243,6 +245,7 @@ public class XERsaxHandler extends HandlerBase {
    * @param length length of data in character array.
    * @exception SAXException on error.
    */
+  @Override
   public void characters(char[] ch, int start, int length)
           throws SAXException {
     //System.out.println("DEBUG: #PCDATA: " + length);
@@ -276,6 +279,7 @@ public class XERsaxHandler extends HandlerBase {
    *
    * @param locator the locator provided by the SAX parser.
    */
+  @Override
   public void setDocumentLocator(Locator locator) {
     // Save locator for use in exception messages, called by the SAX parser.
     sax_locator = locator;

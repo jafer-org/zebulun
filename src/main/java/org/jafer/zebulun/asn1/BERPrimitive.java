@@ -68,7 +68,9 @@ public class BERPrimitive extends BEREncoding {
    * has been written out.
    *
    * @param	dest - OutputStream to write encoding to.
+   * @throws java.io.IOException
    */
+  @Override
   public void
           output(OutputStream dest)
           throws java.io.IOException {
@@ -78,9 +80,10 @@ public class BERPrimitive extends BEREncoding {
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this BER encoded ASN.1 object's
+   * @return a new String object representing this BER encoded ASN.1 object's
    * value.
    */
+  @Override
   public String
           toString() {
     StringBuffer str = new StringBuffer("[");
@@ -98,7 +101,7 @@ public class BERPrimitive extends BEREncoding {
         str.append("PRIVATE ");
         break;
     }
-    str.append(String.valueOf(i_tag) + "] '");
+    str.append(String.valueOf(i_tag)).append("] '");
 
     for (int x = 0; x < contents_octets.length; x++) {
       // Dump each octet in hex
@@ -119,7 +122,11 @@ public class BERPrimitive extends BEREncoding {
   //----------------------------------------------------------------
   /**
    * This protected method is used to implement the "get_encoding" method.
+  * @param offset initial offset
+   * @param data  data
+   * @return calculated offset
    */
+  @Override
   protected int
           i_encoding_get(int offset, byte[] data) {
     int result = i_get_head(offset, data);

@@ -11,6 +11,9 @@
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
+
+import java.util.Arrays;
+
 /**
  * Representation of an ASN.1 SEQUENCE.
  * <p>
@@ -51,7 +54,7 @@ public final class ASN1Sequence extends ASN1Any {
    * @param element_array the ASN.1 objects that make up the sequence.
    */
   public ASN1Sequence(ASN1Any[] element_array) {
-    elements = element_array;
+    elements = Arrays.copyOf(element_array, element_array.length);
   }
 
   //----------------------------------------------------------------
@@ -77,6 +80,7 @@ public final class ASN1Sequence extends ASN1Any {
    * tagged.
    * @exception	ASN1Exception If the BER encoding is incorrect.
    */
+  @Override
   public void
           ber_decode(BEREncoding ber_enc, boolean check_tag)
           throws ASN1Exception {
@@ -110,6 +114,7 @@ public final class ASN1Sequence extends ASN1Any {
    * @return	The BER encoding
    * @exception	ASN1Exception when the object is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -126,6 +131,7 @@ public final class ASN1Sequence extends ASN1Any {
    * @exception	ASN1Exception when the SEQUENCE is invalid and cannot be
    * encoded.
    */
+  @Override
   public BEREncoding
           ber_encode(int tag_type, int tag)
           throws ASN1Exception {
@@ -148,7 +154,7 @@ public final class ASN1Sequence extends ASN1Any {
    */
   public ASN1Sequence
           set(ASN1Any[] element_array) {
-    elements = element_array;
+    elements = Arrays.copyOf(element_array, element_array.length);
     return this;
   }
 
@@ -160,13 +166,14 @@ public final class ASN1Sequence extends ASN1Any {
    */
   public ASN1Any[]
           get() {
-    return elements;
+    return Arrays.copyOf(elements, elements.length);
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value.
+   * @return a new String object representing this ASN.1 object's value.
    */
+  @Override
   public String
           toString() {
     StringBuffer str = new StringBuffer("{");
@@ -193,11 +200,12 @@ public final class ASN1Sequence extends ASN1Any {
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
+  @Override
   public void
           xer_encode(java.io.PrintWriter dest)
           throws ASN1Exception {
-    for (int index = 0; index < elements.length; index++) {
-      elements[index].xer_encode(dest);
+    for (ASN1Any element : elements) {
+      element.xer_encode(dest);
     }
   }
 

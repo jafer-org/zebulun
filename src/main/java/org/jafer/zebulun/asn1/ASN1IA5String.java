@@ -70,6 +70,7 @@ public final class ASN1IA5String extends ASN1OctetString {
    * @return	The BER encoding
    * @exception	ASN1Exception when the object is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -92,6 +93,7 @@ public final class ASN1IA5String extends ASN1OctetString {
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
+  @Override
   public void
           xer_encode(java.io.PrintWriter dest)
           throws ASN1Exception {
@@ -111,6 +113,7 @@ public final class ASN1IA5String extends ASN1OctetString {
       super(overriding_xer_tag);
     }
 
+    @Override
     public void endElement(XERsaxHandler handler,
             String name)
             throws org.xml.sax.SAXException {

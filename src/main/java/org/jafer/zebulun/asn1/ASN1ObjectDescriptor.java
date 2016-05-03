@@ -72,6 +72,7 @@ public final class ASN1ObjectDescriptor extends ASN1GraphicString {
    * @return	The BER encoding
    * @exception	ASN1Exception when the object is invalid and cannot be encoded.
    */
+  @Override
   public BEREncoding
           ber_encode()
           throws ASN1Exception {
@@ -98,6 +99,7 @@ public final class ASN1ObjectDescriptor extends ASN1GraphicString {
       super(overriding_xer_tag);
     }
 
+    @Override
     public void endElement(XERsaxHandler handler,
             String name)
             throws org.xml.sax.SAXException {

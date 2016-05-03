@@ -11,6 +11,7 @@
 package org.jafer.zebulun.asn1;
 
 import java.io.OutputStream;
+import java.util.Arrays;
 
 //----------------------------------------------------------------
 /**
@@ -49,12 +50,12 @@ public class BERConstructed extends BEREncoding {
   public BERConstructed(int asn1_class, int tag, BEREncoding[] elements)
           throws ASN1Exception {
     int content_length = 0;
-    for (int index = 0; index < elements.length; index++) {
-      content_length += elements[index].i_total_length;
+    for (BEREncoding element : elements) {
+      content_length += element.i_total_length;
     }
 
     init(asn1_class, /* constructed */ true, tag, content_length);
-    content_elements = elements;
+    content_elements = Arrays.copyOf(elements, elements.length);
   }
 
   //----------------------------------------------------------------
@@ -68,13 +69,14 @@ public class BERConstructed extends BEREncoding {
    *
    * @param	dest - OutputStream to write encoding to.
    */
+  @Override
   public void
           output(OutputStream dest)
           throws java.io.IOException {
     output_head(dest);
 
-    for (int index = 0; index < content_elements.length; index++) {
-      content_elements[index].output(dest);
+    for (BEREncoding content_element : content_elements) {
+      content_element.output(dest);
     }
   }
 
@@ -106,8 +108,9 @@ public class BERConstructed extends BEREncoding {
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value.
+   * @return a new String object representing this ASN.1 object's value.
    */
+  @Override
   public String
           toString() {
     StringBuffer str = new StringBuffer("[");
@@ -125,7 +128,7 @@ public class BERConstructed extends BEREncoding {
         str.append("PRIVATE ");
         break;
     }
-    str.append(String.valueOf(i_tag) + "]{");
+    str.append(String.valueOf(i_tag)).append("]{");
 
     for (int x = 0; x < content_elements.length; x++) {
       if (x != 0) {
@@ -143,13 +146,17 @@ public class BERConstructed extends BEREncoding {
   //----------------------------------------------------------------
   /**
    * This protected method is used to implement the "get_encoding" method.
+   * @param offset initial offset
+   * @param data  data
+   * @return calculated offset
    */
+  @Override
   protected int
           i_encoding_get(int offset, byte[] data) {
     int result = i_get_head(offset, data);
 
-    for (int index = 0; index < content_elements.length; index++) {
-      result = content_elements[index].i_encoding_get(result, data);
+    for (BEREncoding content_element : content_elements) {
+      result = content_element.i_encoding_get(result, data);
     }
 
     return result;
