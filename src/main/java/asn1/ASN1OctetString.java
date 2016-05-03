@@ -11,6 +11,8 @@
 
 package asn1;
 
+import java.io.*;
+
 //----------------------------------------------------------------
 /**
  * Representation of an ASN.1 OCTET STRING.
@@ -20,7 +22,7 @@ package asn1;
  * can have any length including zero. The type is a string type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:07 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -37,12 +39,17 @@ public final static int TAG = 0x04;
   /**
    * Constructor for an OCTET STRING object. The tag is set to the
    * default of UNIVERSAL 4, and its value to the given bytes.
+   * 
+   * @param data	value
    */
 
 public 
 ASN1OctetString(byte[] data)
   {
-    octets = new String(data); // ??? should specify explicit encoding
+    octets = new byte[data.length];
+    for (int i = 0; i<data.length; i++) {
+        octets[i] = data[i];
+    }
   }
 
   //----------------------------------------------------------------
@@ -50,12 +57,18 @@ ASN1OctetString(byte[] data)
    * Constructor for an OCTET STRING object. The tag is set to the
    * default of UNIVERSAL 4, and its value to the lower bytes of the
    * characters of the given string.
+   * 
+   * @param str	value
    */
 
 public 
 ASN1OctetString(String str)
   {
-    octets = str;
+    try {
+        octets = str.getBytes("ISO-8859-1");
+    } catch (UnsupportedEncodingException ex) {
+        octets = str.getBytes();
+    }
   }
 
   //----------------------------------------------------------------
@@ -107,7 +120,11 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
 	buf.append((char) (encoding[x] & 0x00ff));
       }
 
-      octets = new String(buf);
+    try {
+        octets = new String(buf).getBytes("ISO-8859-1");
+    } catch (UnsupportedEncodingException ex) {
+        octets = new String(buf).getBytes();
+    }
 
     } else {
       // not implemented yet ???
@@ -156,13 +173,13 @@ public BEREncoding
 ber_encode(int tag_type, int tag)
        throws ASN1Exception
   {
-    int size = octets.length();
+    int size = octets.length;
     int[] encoding = new int[size];
 
     // Generate BER encoding of the Octet String
 
     for (int index = 0; index < size; index++) {
-      encoding[index] = octets.charAt(index) & 0x00ff;
+      encoding[index] = octets[index] & 0x00ff;
     }
 
     return new BERPrimitive(tag_type, tag, encoding);
@@ -172,14 +189,18 @@ ber_encode(int tag_type, int tag)
   /**
    * Method to set the OCTET STRING's value.
    *
-   * @param new_val  the value to set the OCTET STRING to.
+   * @param octet_array  the value to set the OCTET STRING to.
    * @return	the object.
    */
 
 public ASN1OctetString
 set(byte[] octet_array)
   {
-    octets = new String(octet_array); // ??? should specify explicit encoding
+
+      octets = new byte[octet_array.length];
+      for (int i = 0; i<octet_array.length; i++) {
+          octets[i] = octet_array[i];
+      }
     return this;
   }
 
@@ -194,7 +215,11 @@ set(byte[] octet_array)
 public ASN1OctetString
 set(String str)
   {
-    octets = str;
+    try {
+      octets = str.getBytes("ISO-8859-1");
+    } catch (UnsupportedEncodingException ex) {
+      octets = str.getBytes();
+    }
     return this;
   }
 
@@ -208,7 +233,11 @@ set(String str)
 public String
 get()
   {
-    return octets;
+    try {
+        return new String(octets, "ISO-8859-1");
+    } catch (UnsupportedEncodingException ex) {
+        return new String(octets);
+    }
   }
 
   //----------------------------------------------------------------
@@ -221,14 +250,7 @@ get()
 public byte[]
 get_bytes()
   {
-    int size = octets.length();
-    byte[] bytes = new byte[size];
-
-    for (int x = 0; x < size; x++) {
-      bytes[x] = (byte) octets.charAt(x);
-    }
-
-    return bytes;
+      return octets;
   }
 
   //----------------------------------------------------------------
@@ -249,7 +271,7 @@ get_bytes()
 public String
 toString()
   {
-    int size = octets.length();
+    int size = octets.length;
     // Buffer: make it big just in case everything needs to be encoded
     StringBuffer buf = new StringBuffer(32 + (size * 4));
 
@@ -259,7 +281,7 @@ toString()
     int binary = 0;
 
     for (int x = 0; x < size; x++) {
-      char octet = octets.charAt(x);
+      char octet = (char)octets[x];
 
       if ((' ' <= octet && octet <= '~') ||
 	  octet == '\n') {
@@ -275,7 +297,7 @@ toString()
       buf.append('"');
 
       for (int x = 0; x < size; x++) {
-	char octet = octets.charAt(x);
+	char octet = (char)octets[x];
 
 	if (' ' <= octet && octet <= '~') {
 	  // Printable character
@@ -315,7 +337,7 @@ toString()
       buf.append('\'');
 
       for (int x = 0; x < size; x++) {
-	char octet = octets.charAt(x);
+	char octet = (char)octets[x];
 
 	buf.append(hex[((octet >> 4) & 0x0f)]);
 	buf.append(hex[(octet & 0x0f)]);
@@ -333,7 +355,7 @@ toString()
    * the lower bytes are valid.
    */
 
-private String octets;
+private byte[] octets;
 
   //================================================================
   // XER (XML Encoding Rules) code
@@ -350,7 +372,7 @@ private String octets;
     xer_encode(java.io.PrintWriter dest)
     throws ASN1Exception
   {
-    int size = octets.length();
+    int size = octets.length;
 
     // Determine whether to use hexadecimal form or text form
 
@@ -358,7 +380,7 @@ private String octets;
     int nonprintable = 0;
 
     for (int x = 0; x < size; x++) {
-      char octet = octets.charAt(x);
+      char octet = (char)octets[x];
 
       if ((' ' <= octet && octet <= '~' &&
            octet != '&' &&
@@ -375,7 +397,7 @@ private String octets;
       // Display as a printable string
 
       for (int x = 0; x < size; x++) {
-        dest.print(octets.charAt(x));
+        dest.print((char)octets[x]);
       }
 
     } else {
@@ -384,7 +406,7 @@ private String octets;
       dest.print("<xer:Hex>");
 
       for (int x = 0; x < size; x++) {
-	char octet = octets.charAt(x);
+	char octet = (char)octets[x];
 
 	dest.print(hex[((octet >> 4) & 0x0f)]);
 	dest.print(hex[(octet & 0x0f)]);

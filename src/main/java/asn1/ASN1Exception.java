@@ -16,7 +16,7 @@ package asn1;
  * ASN1Exception
  *
  * @version	$Release$ $Date: 1998/12/29 00:19:40 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

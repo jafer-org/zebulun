@@ -19,7 +19,7 @@ package asn1;
  * when only the tag is of interest, and not any value.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:07 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

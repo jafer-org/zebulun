@@ -15,13 +15,13 @@ package asn1;
 /**
  * Representation of an ASN.1 OBJECT IDENTIFIER.
  *
- * The <code>OBJECT IDENTIFIER<code> type denotes an object identifier,
+ * The <code>OBJECT IDENTIFIER</code> type denotes an object identifier,
  * which is a sequence of integer components. An OBJECT IDENTIFIER can
  * have any number of components, whch are generally non-negative.
  * This type is a non-string type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:07 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -46,6 +46,8 @@ private int[] oid;
   /**
    * Constructor for an ASN.1 OBJECT IDENTIFER object. The tag is set
    * to the default tag of UNIVERSAL 6, and the given OID value.
+   * 
+   * @param oid_value	value
    */
 
   public 
@@ -250,6 +252,8 @@ private int[] oid;
    * Method to set the OBJECT IDENTIFIER's value.
    *
    * @param new_val  the value to set the OBJECT IDENTIFIER to.
+   * @return OBJECT IDENTIFIER
+   * 
    */
 
 public ASN1ObjectIdentifier

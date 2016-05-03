@@ -20,7 +20,7 @@ package asn1;
  * It is used for decoding generic BER encodings into ASN.1 objects.
  *
  * @version	$Release$ $Date: 1999/04/20 23:58:26 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

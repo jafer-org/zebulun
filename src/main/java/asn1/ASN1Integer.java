@@ -24,7 +24,7 @@ package asn1;
  * two's complement values.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:06 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

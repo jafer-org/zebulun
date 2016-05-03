@@ -29,7 +29,7 @@ import java.io.OutputStream;
  * @see asn1.BEREncoding
  *
  * @version	$Release$ $Date: 1999/04/07 01:23:47 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

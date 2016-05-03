@@ -28,7 +28,7 @@ package asn1;
  *
  *
  * @version	$Release$ $Date: 1999/04/20 01:50:46 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

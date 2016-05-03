@@ -30,7 +30,7 @@ package asn1;
  * are sorted according to tag number.
  *
  * @version	$Release$ $Date: 1999/03/17 05:45:39 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

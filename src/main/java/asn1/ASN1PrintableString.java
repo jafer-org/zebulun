@@ -15,10 +15,10 @@ package asn1;
 /**
  * Representation for ASN.1 PrintableString.
  *
- * The <code>PrintableString<code> type denotes an arbitary string
+ * The <code>PrintableString</code> type denotes an arbitrary string
  * of printable characters from the following character set:
  *
- * <table>
+ * <table summary="printable character set"> 
  * <tr><td>Capital letters<td>A, B, ... , Z
  * <tr><td>Small letters<td>a, b, ..., z
  * <tr><td>Digits<td>0, 1, ..., 9
@@ -39,7 +39,7 @@ package asn1;
  * This type is a string type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:08 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -55,7 +55,10 @@ public final static int TAG = 0x13;
   //----------------------------------------------------------------
   /**
    * Constructor for a PrintableString object. It sets the tag to the
-   * default value of UNIVERSAL 19 (0x13). */
+   * default value of UNIVERSAL 19 (0x13). 
+   * 
+   * @param text	value
+   * */
 
 public 
 ASN1PrintableString(String text)

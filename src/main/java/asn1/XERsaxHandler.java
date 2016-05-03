@@ -1,11 +1,17 @@
-/*
+/**----------------------------------------------------------------
+ * $Source: /projects/rdu/cvsroot/projects/zebulun/au/edu/dstc/zebulun/asn1/XERsaxHandler.java,v $
+ * $Date: 1999/03/17 05:45:41 $
+ * $Revision: 1.3 $
+ * $Name:  $
+ *
  * Copyright (C) 1996, 1999, Hoylen Sue.  All Rights Reserved.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
  * the supplied license for more details.
- */
+//----------------------------------------------------------------
+**/
 
 package asn1;
 

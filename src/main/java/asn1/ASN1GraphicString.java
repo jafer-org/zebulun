@@ -15,12 +15,12 @@ package asn1;
 /**
  * ASN.1 GraphicString
  *
- * The <code>GraphicString<code> type denotes an arbitary string
+ * The <code>GraphicString</code> type denotes an arbitrary string
  * of Graphic characters.
  * This type is a string type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:06 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------

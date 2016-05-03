@@ -24,7 +24,7 @@ package asn1;
  * two's complement values.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:05 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -66,6 +66,8 @@ ASN1Enumerated(int number)
   /**
    * Constructor for an ASN.1 ENUMERATED object from a BER encoding.
    *
+   * @param ber The BER encoding to use.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
    * @exception	ASN1Exception if the BER encoding is incorrect.
    */
 

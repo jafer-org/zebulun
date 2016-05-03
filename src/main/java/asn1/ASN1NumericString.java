@@ -15,12 +15,12 @@ package asn1;
 /**
  * Representation for an ASN.1 NumericString.
  *
- * The <code>NumericString<code> type denotes an arbitary string
+ * The <code>NumericString</code> type denotes an arbitrary string
  * of Numeric characters (digits and space).
  * This type is a string type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:07 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -36,7 +36,10 @@ public final static int TAG = 0x12;
   //----------------------------------------------------------------
   /**
    * Constructor for an ASN.1 NumericString object. It sets the tag to the
-   * default value of UNIVERSAL 18 (0x12). */
+   * default value of UNIVERSAL 18 (0x12). 
+   * 
+   * @param value String value
+   */
 
 public 
 ASN1NumericString(String value)
@@ -48,7 +51,7 @@ ASN1NumericString(String value)
   /**
    * Constructor for a NumericString object from a primitive BER encoding.
    *
-   * @param ber_enc The BER encoding to use.
+   * @param ber The BER encoding to use.
    * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
    * @exception	ASN1Exception If the BER encoding is incorrect.
    */

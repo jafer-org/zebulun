@@ -15,12 +15,12 @@ package asn1;
 /**
  * ASN.1 GeneralString
  *
- * The <code>GeneralString<code> type denotes an arbitary string
+ * The <code>GeneralString</code> type denotes an arbitrary string
  * of General characters.
  * This type is a string type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:06 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -51,6 +51,8 @@ ASN1GeneralString(String value)
   /**
    * Constructor for a GeneralString object from a primitive BER encoding.
    *
+   * @param ber The BER encoding to use.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
    * @exception	ASN1Exception if the BER encoding is incorrect.
    */
 

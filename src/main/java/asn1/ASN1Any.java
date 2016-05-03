@@ -31,7 +31,7 @@ package asn1;
  * signed integers for tags, lengths, etc.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:05 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 public class ASN1Any
@@ -72,7 +72,7 @@ ASN1Any(BEREncoding ber, boolean check_tag)
    *
    * This method will be overridden by derived types.
    *
-   * @param ber The BER encoding to use.
+   * @param ber_enc The BER encoding to use.
    * @param check_tag If true, it checks the tag. Does nothing for ASN1Any.
    * @exception	ASN1Exception If the BER encoding is incorrect. 
    *            Never occurs for ASN1Any.
@@ -92,6 +92,7 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
    * This method is usually overridden by a subclass method.
    *
    * @exception	ASN1Exception If the object cannot be BER encoded. 
+   * @return BER encoding
    */
 
 public BEREncoding

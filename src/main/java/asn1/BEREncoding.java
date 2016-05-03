@@ -36,7 +36,7 @@ import java.util.Vector;
  * @see asn1.BERConstructed
  *
  * @version	$Release$ $Date: 1999/04/07 01:23:47 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
@@ -99,6 +99,9 @@ output(OutputStream dest) throws java.io.IOException;
    * use the output method.
    *
    * @see	output
+   *
+   * @return byte array
+   * 
    */
 
 public byte[]
@@ -112,6 +115,8 @@ encoding_get()
   //----------------------------------------------------------------
   /**
    * Method to examine the tag type of the BER encoded ASN.1 object.
+   * 
+   * @return tag type
    */
 
 public int
@@ -123,6 +128,8 @@ tag_type_get()
   //----------------------------------------------------------------
   /**
    * Method to examine the tag number of the BER encoded ASN.1 object.
+   * 
+   * @return tag number
    */
 
 public int
@@ -134,6 +141,8 @@ tag_get()
   //----------------------------------------------------------------
   /**
    * Returns the total number of bytes the encoding occupies.
+   * 
+   * @return total number of bytes
    */
 
   //private int total_length()   {    return i_total_length;  }
@@ -151,7 +160,7 @@ tag_get()
    * which is in the definite-length form).
    *
    * @param	src - the InputStream to read the raw BER from.
-   * @returns	Returns the next complete BEREncoding object read
+   * @return	Returns the next complete BEREncoding object read
    *		in from the input stream. Returns null if the
    *		end has been reached.
    * @exception	ASN1Exception If data does not represent a BER encoding

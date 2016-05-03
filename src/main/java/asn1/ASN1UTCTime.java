@@ -16,7 +16,7 @@ package asn1;
  * ASN.1 UTCTime
  * <p>
  *
- * The <code>UTCTime<code> type denotes a "coordinated universal time"
+ * The <code>UTCTime</code> type denotes a "coordinated universal time"
  * or Greenwich Mean Time (GMT) value. The value includes the local
  * time precise to either minutes or seconds, and an offset from GMT
  * in hours and minutes.
@@ -31,7 +31,7 @@ package asn1;
  *   YYMMDDhhmmZ
  *
  * @version	$Release$ $Date: 1999/03/17 05:45:39 $
- * @author	Hoylen Sue <h.sue@ieee.org>
+ * @author	Hoylen Sue (h.sue@ieee.org)
  */
 
 //----------------------------------------------------------------
