@@ -8,50 +8,46 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
  * the supplied license for more details.
  */
-
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
+
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
  * Representation of an ASN.1 <code>BIT STRING</code>
  *
- * The BIT STRING type denotes an arbitary string of bits (ones and zeros).
- * A BIT STRING value can have any length, including zero. The type is a
- * string type.
+ * The BIT STRING type denotes an arbitary string of bits (ones and zeros). A
+ * BIT STRING value can have any length, including zero. The type is a string
+ * type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:05 $
  * @author	Hoylen Sue (h.sue@ieee.org)
  */
+public final class ASN1BitString extends ASN1Any {
 
-public final class ASN1BitString extends ASN1Any
-{
   /**
    * This constant is the ASN.1 UNIVERSAL tag value for BIT STRING.
    */
 
-public final static int TAG = 0x03;
+  public static final int TAG = 0x03;
 
   //================================================================
   /**
-   * The values of the BIT STRING are stored in this array of boolean
-   * values.
+   * The values of the BIT STRING are stored in this array of boolean values.
    */
-  
-private boolean[] bits;
+  private boolean[] bits;
 
   //----------------------------------------------------------------
   /**
-   * Constructor for an ASN.1 BIT STRING object. It sets the tag
-   * to the default value of UNIVERSAL 3, and the bits to the
-   * given bit_values.
+   * Constructor for an ASN.1 BIT STRING object. It sets the tag to the default
+   * value of UNIVERSAL 3, and the bits to the given bit_values.
    *
    * @param	bit_values - array of booleans representing the bit string.
    */
-
-public 
-ASN1BitString(boolean[] bit_values)
-  {
-    bits = bit_values;
+  public ASN1BitString(boolean[] bit_values) {
+    bits = Arrays.copyOf(bit_values, bit_values.length);
   }
 
   //----------------------------------------------------------------
@@ -59,14 +55,12 @@ ASN1BitString(boolean[] bit_values)
    * Constructor for an ASN.1 BIT STRING object from a BER encoding.
    *
    * @param ber The BER encoding to use.
-   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly
+   * tagged.
    * @exception	ASN1Exception If the BER encoding is incorrect.
    */
-
-public
-ASN1BitString(BEREncoding ber, boolean check_tag)
-       throws ASN1Exception
-  {
+  public ASN1BitString(BEREncoding ber, boolean check_tag)
+          throws ASN1Exception {
     super(ber, check_tag); // superclass will call ber_decode
   }
 
@@ -75,20 +69,19 @@ ASN1BitString(BEREncoding ber, boolean check_tag)
    * Method for initializing the object from a BER encoding.
    *
    * @param ber_enc The BER encoding to use.
-   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly
+   * tagged.
    * @exception	ASN1EncodingException If the BER encoding is incorrect.
    */
-
-public void
-ber_decode(BEREncoding ber_enc, boolean check_tag)
-       throws ASN1EncodingException
-  {
+  @Override
+  public void
+          ber_decode(BEREncoding ber_enc, boolean check_tag)
+          throws ASN1EncodingException {
     if (check_tag) {
-      if (ber_enc.tag_get() != TAG || 
-	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
-	throw new ASN1EncodingException
-	  ("ASN.1 BIT STRING: bad BER: tag=" + ber_enc.tag_get() + 
-	   " expected " + TAG + "\n");
+      if (ber_enc.tag_get() != TAG
+              || ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
+        throw new ASN1EncodingException("ASN.1 BIT STRING: bad BER: tag=" + ber_enc.tag_get()
+                + " expected " + TAG + "\n");
       }
     }
 
@@ -96,75 +89,68 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
       BERPrimitive ber = (BERPrimitive) ber_enc;
 
       int[] encoding = ber.peek();
-  
+
       if (encoding.length < 1) {
-	throw new ASN1EncodingException
-	  ("ASN1 BIT STRING: invalid encoding, length = " + encoding.length);
+        throw new ASN1EncodingException("ASN1 BIT STRING: invalid encoding, length = " + encoding.length);
       }
 
       int unused_bits = (encoding[0] & 0x07);
       int num_bits = (encoding.length - 1) * 8 - unused_bits;
-    
+
       bits = new boolean[num_bits];
       for (int bit = 0; bit < num_bits; bit++) {
-	int octet = encoding[(bit / 8) + 1];
-	octet <<= (bit % 8);
-	if ((octet & 0x80) == 0) {
-	  bits[bit] = false;
-	} else {
-	  bits[bit] = true;
-	}
+        int octet = encoding[(bit / 8) + 1];
+        octet <<= (bit % 8);
+        if ((octet & 0x80) == 0) {
+          bits[bit] = false;
+        } else {
+          bits[bit] = true;
+        }
       }
     } else {
       // BERConstructed ber = (BERConstructed) ber_enc;
 
-      throw new ASN1EncodingException
-	("ASN.1 BIT STRING: decoding constructed NOT IMPLEMENTED YET");
+      throw new ASN1EncodingException("ASN.1 BIT STRING: decoding constructed NOT IMPLEMENTED YET");
       // ??? extract all the bits then concatenate into one
     }
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a BER encoding of the BIT STRING.
-   * Bit strings can have a primitive encoding and a constructed
-   * encoding. This method performs the primitive encoding (which
-   * is the one specified for DER encoding).
+   * Returns a BER encoding of the BIT STRING. Bit strings can have a primitive
+   * encoding and a constructed encoding. This method performs the primitive
+   * encoding (which is the one specified for DER encoding).
    *
    * @return	The BER encoding of the BIT STRING
-   * @exception	ASN1Exception when the BIT STRING is invalid
-   *		and cannot be encoded.
+   * @exception	ASN1Exception when the BIT STRING is invalid and cannot be
+   * encoded.
    */
-
-public BEREncoding
-ber_encode()
-       throws ASN1Exception
-  {
+  @Override
+  public BEREncoding
+          ber_encode()
+          throws ASN1Exception {
     return ber_encode(BEREncoding.UNIVERSAL_TAG, TAG);
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a BER encoding of the BIT STRING.
-   * Bit strings can have a primitive encoding and a constructed
-   * encoding. This method performs the primitive encoding (which
-   * is the one specified for DER encoding).
+   * Returns a BER encoding of the BIT STRING. Bit strings can have a primitive
+   * encoding and a constructed encoding. This method performs the primitive
+   * encoding (which is the one specified for DER encoding).
    *
    * @return	The BER encoding of the BIT STRING
-   * @exception	ASN1Exception when the BIT STRING is invalid
-   *		and cannot be encoded.
+   * @exception	ASN1Exception when the BIT STRING is invalid and cannot be
+   * encoded.
    */
-
-public BEREncoding
-ber_encode(int tag_type, int tag)
-       throws ASN1Exception
-  {
+  @Override
+  public BEREncoding
+          ber_encode(int tag_type, int tag)
+          throws ASN1Exception {
     int num_octets = (bits.length + 7) / 8;
 
     int[] encoding = new int[num_octets + 1];
 
     // Generate BER encoding of the BitString
-
     // First octet gives the number of unused bits.
     encoding[0] = (num_octets * 8) - bits.length;
 
@@ -173,12 +159,12 @@ ber_encode(int tag_type, int tag)
 
       int bit_base_index = (count - 1) * 8;
       for (int bit_index = 0; bit_index < 8; bit_index++) {
-	int n = bit_base_index + bit_index;
+        int n = bit_base_index + bit_index;
 
-	encoding[count] <<= 1;
-	if (n < bits.length && bits[n]) {
-	  encoding[count] |= 0x01;
-	}
+        encoding[count] <<= 1;
+        if (n < bits.length && bits[n]) {
+          encoding[count] |= 0x01;
+        }
       }
     }
 
@@ -192,11 +178,9 @@ ber_encode(int tag_type, int tag)
    * @param	new_bits the value to set the BIT STRING to.
    * @return	the object.
    */
-
-public ASN1BitString
-set(boolean[] new_bits)
-  {
-    bits = new_bits;
+  public ASN1BitString
+          set(boolean[] new_bits) {
+    bits = Arrays.copyOf(new_bits, new_bits.length);
     return this;
   }
 
@@ -206,37 +190,33 @@ set(boolean[] new_bits)
    *
    * @return	the BIT STRING's current value.
    */
-
-public boolean[]
-get()
-  {
-    return bits;
+  public boolean[]
+          get() {
+    return Arrays.copyOf(bits, bits.length);
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value. 
+   * Returns a new String object representing this ASN.1 object's value.
    *
    * @return	A text string representation of the BitString.
    */
-
-public String
-toString()
-  {
-    StringBuffer str = new StringBuffer();
+  @Override
+  public String
+          toString() {
+    StringBuilder str = new StringBuilder();
 
     str.append('\'');
     for (int x = 0; x < bits.length; x++) {
       str.append(bits[x] ? '1' : '0');
     }
     str.append("'B");
-    
+
     return str.toString();
   }
 
   //================================================================
   // XER (XML Encoding Rules) code
-
   //----------------------------------------------------------------
   /**
    * Produces the XER encoding of the object.
@@ -244,11 +224,10 @@ toString()
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
-
+  @Override
   public void
-    xer_encode(java.io.PrintWriter dest)
-    throws ASN1Exception
-  {
+          xer_encode(java.io.PrintWriter dest)
+          throws ASN1Exception {
     for (int x = 0; x < bits.length; x++) {
       dest.print(bits[x] ? '1' : '0');
     }
@@ -256,109 +235,111 @@ toString()
 
   //================================================================
   // Nested inner-class for parsing XER.
-
   public static class XER_Parser_Proxy extends XERsaxHandler.XER_Parser_Proxy {
 
-    private final static int STATE_INIT = 0;
-    private final static int STATE_START_GOT = 1;
-    private final static int STATE_VALUE_GOT = 2;
-    private final static int STATE_TERM = 3;
+    private static final int STATE_INIT = 0;
+    private static final int STATE_START_GOT = 1;
+    private static final int STATE_VALUE_GOT = 2;
+    private static final int STATE_TERM = 3;
 
     private int state;
 
-    private java.util.Vector proxy_value;
+    private ArrayList<Boolean> proxy_value;
 
     //----------------
-
-    public XER_Parser_Proxy()
-    {
+    public XER_Parser_Proxy() {
       super("BIT_STRING");
       state = STATE_INIT;
     }
 
-    public XER_Parser_Proxy(String overriding_xer_tag)
-    {
+    public XER_Parser_Proxy(String overriding_xer_tag) {
       super(overriding_xer_tag);
       state = STATE_INIT;
     }
 
     //----------------
-
+    @Override
     public void startElement(XERsaxHandler handler,
-			     String name,
-			     org.xml.sax.AttributeList atts)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals(xer_tag) &&
-	  state == STATE_INIT) {
-	proxy_value = new java.util.Vector();
-	state = STATE_START_GOT;
+            String uri,
+            String localName,
+            String qName,
+            org.xml.sax.Attributes atts)
+            throws org.xml.sax.SAXException {
+      if (localName.equals(xer_tag)
+              && state == STATE_INIT) {
+        proxy_value = new ArrayList<>();
+        state = STATE_START_GOT;
 
       } else {
-	handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, localName);
       }
     }
 
     //----------------
-
+    @Override
     public void endElement(XERsaxHandler handler,
-			   String name)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals(xer_tag) &&
-	  state == STATE_VALUE_GOT) {
-	// Create new BIT STRING object
+            String name)
+            throws org.xml.sax.SAXException {
+      if (name.equals(xer_tag)
+              && state == STATE_VALUE_GOT) {
+        // Create new BIT STRING object
 
+        if (proxy_value == null) {
+          throw new org.xml.sax.SAXException("Proxy Value is empty");
+        }
+        
         int size = proxy_value.size();
-	boolean[] a_value = new boolean[size];
-	for (int x = 0; x < size; x++) {
-	  a_value[x] = ((java.lang.Boolean)
-			proxy_value.elementAt(x)).booleanValue();
-	}
-	handler.member_got(new ASN1BitString(a_value));
+        boolean[] a_value = new boolean[size];
+        for (int x = 0; x < size; x++) {
+          a_value[x] = proxy_value.get(x);
+        }
+        handler.member_got(new ASN1BitString(a_value));
 
-	state = STATE_TERM;
+        state = STATE_TERM;
 
       } else {
-	handler.throw_end_unexpected(xer_tag, name);
+        handler.throw_end_unexpected(xer_tag, name);
       }
     }
 
     //----------------
-
+    @Override
     public void characters(XERsaxHandler handler,
-			   char[] ch,
-			   int start,
-			   int length)
-      throws org.xml.sax.SAXException
-    {
+            char[] ch,
+            int start,
+            int length)
+            throws org.xml.sax.SAXException {
       int begin = start;
 
       if (state == STATE_START_GOT) {
-	int end = begin + length;
+        if (proxy_value == null) {
+          throw new org.xml.sax.SAXException("Proxy Value is empty");
+        }
 
-	while (begin < end) {
-	  char character = ch[begin];
-	  if (character == '0') {
-	    proxy_value.addElement(new java.lang.Boolean(false));
-	    state = STATE_VALUE_GOT;
+        int end = begin + length;
 
-	  } else if (character == '1') {
-	    proxy_value.addElement(new java.lang.Boolean(true));
-	    state = STATE_VALUE_GOT;
+        while (begin < end) {
+          char character = ch[begin];
+          if (character == '0') {
+            proxy_value.add(false);
+            state = STATE_VALUE_GOT;
 
-	  } else if (Character.isWhitespace(character)) {
-	    // ignore whitespace
+          } else if (character == '1') {
+            proxy_value.add(true);
+            state = STATE_VALUE_GOT;
 
-	  } else {
-	    // die
-	  }
+          } else if (Character.isWhitespace(character)) {
+            // ignore whitespace
 
-	  begin++;
-	}
+          } else {
+            // die
+          }
+
+          begin++;
+        }
 
       } else {
-	handler.throw_characters_unexpected(xer_tag);
+        handler.throw_characters_unexpected(xer_tag);
       }
     }
 
@@ -384,6 +365,6 @@ toString()
   Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
   Imported sources
 
-  */
+ */
 //----------------------------------------------------------------
 //EOF
