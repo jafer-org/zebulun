@@ -8,7 +8,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
  * the supplied license for more details.
  */
-
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
@@ -18,18 +17,14 @@ package org.jafer.zebulun.asn1;
  * @version	$Release$ $Date: 1998/12/29 00:19:40 $
  * @author	Hoylen Sue (h.sue@ieee.org)
  */
-
 //----------------------------------------------------------------
+public class ASN1Exception extends Exception {
 
-public class ASN1Exception extends Exception
-{
-  public ASN1Exception()
-  {
+  public ASN1Exception() {
     super("ASN.1 exception");
   }
 
-  public ASN1Exception(String message)
-  {
+  public ASN1Exception(String message) {
     super(message);
   }
 }
@@ -40,6 +35,6 @@ public class ASN1Exception extends Exception
   Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
   Imported sources
 
-  */
+ */
 //----------------------------------------------------------------
 //EOF

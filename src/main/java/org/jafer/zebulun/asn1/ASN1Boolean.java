@@ -8,7 +8,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
  * the supplied license for more details.
  */
-
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
@@ -21,35 +20,29 @@ package org.jafer.zebulun.asn1;
  * @version	$Release$ $Date: 1999/04/13 07:23:05 $
  * @author	Hoylen Sue (h.sue@ieee.org)
  */
-
 //----------------------------------------------------------------
+public final class ASN1Boolean extends ASN1Any {
 
-public final class ASN1Boolean extends ASN1Any
-{
   /**
    * This constant is the ASN.1 UNIVERSAL tag value for BOOLEAN.
    */
 
-public final static int TAG = 0x01;
+  public final static int TAG = 0x01;
 
   //----------------------------------------------------------------
   /**
    * The value of the BOOLEAN is stored in this variable.
    */
-
   private boolean value;
 
   //================================================================
   /**
-   * Default constructor for an ASN.1 BOOLEAN object. It sets the tag
-   * to the default of UNIVERSAL 1, and the value to bool.
+   * Default constructor for an ASN.1 BOOLEAN object. It sets the tag to the
+   * default of UNIVERSAL 1, and the value to bool.
    *
    * @param	bool the value of the BOOLEAN.
    */
-
-public 
-ASN1Boolean(boolean bool)
-  {
+  public ASN1Boolean(boolean bool) {
     value = bool;
   }
 
@@ -58,14 +51,12 @@ ASN1Boolean(boolean bool)
    * Constructor for an ASN.1 BOOLEAN object from a BER encoding.
    *
    * @param ber The BER encoding to use.
-   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly
+   * tagged.
    * @exception	ASN1Exception if the BER encoding is incorrect.
    */
-
-public
-ASN1Boolean(BEREncoding ber, boolean check_tag)
-       throws ASN1Exception
-  {
+  public ASN1Boolean(BEREncoding ber, boolean check_tag)
+          throws ASN1Exception {
     super(ber, check_tag); // superclass will call ber_decode
   }
 
@@ -74,20 +65,18 @@ ASN1Boolean(BEREncoding ber, boolean check_tag)
    * Method for initializing the object from a BER encoding.
    *
    * @param ber_enc The BER encoding to use.
-   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly
+   * tagged.
    * @exception	ASN1EncodingException if the BER encoding is incorrect.
    */
-
-public void
-ber_decode(BEREncoding ber_enc, boolean check_tag)
-       throws ASN1EncodingException
-  {
+  public void
+          ber_decode(BEREncoding ber_enc, boolean check_tag)
+          throws ASN1EncodingException {
     if (check_tag) {
-      if (ber_enc.tag_get() != TAG || 
-	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
-	throw new ASN1EncodingException
-	  ("ASN.1 BOOLEAN: bad BER: tag=" + ber_enc.tag_get() + 
-	   " expected " + "TAG\n");
+      if (ber_enc.tag_get() != TAG
+              || ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
+        throw new ASN1EncodingException("ASN.1 BOOLEAN: bad BER: tag=" + ber_enc.tag_get()
+                + " expected " + "TAG\n");
       }
     }
 
@@ -95,20 +84,18 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
       BERPrimitive ber = (BERPrimitive) ber_enc;
 
       int[] encoding = ber.peek();
-  
+
       if (encoding.length != 1) {
-	throw new ASN1EncodingException
-	  ("ASN.1 BOOLEAN: invalid encoding, length = " + encoding.length);
+        throw new ASN1EncodingException("ASN.1 BOOLEAN: invalid encoding, length = " + encoding.length);
       }
 
       if (encoding[0] == 0) {
-	value = false;
+        value = false;
       } else {
-	value = true;
+        value = true;
       }
     } else {
-      throw new ASN1EncodingException
-	("ASN.1 BOOLEAN: bad BER: decoding constructed NOT IMPLEMENTED YET");
+      throw new ASN1EncodingException("ASN.1 BOOLEAN: bad BER: decoding constructed NOT IMPLEMENTED YET");
       //???
     }
   }
@@ -118,14 +105,11 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
    * Returns a BER encoding of the BOOLEAN.
    *
    * @return	The BER encoding of the BOOLEAN
-   * @exception	ASN1Exception when the BOOLEAN is invalid
-   *		and cannot be encoded.
+   * @exception	ASN1Exception when the BOOLEAN is invalid and cannot be encoded.
    */
-
-public BEREncoding
-ber_encode() 
-       throws ASN1Exception
-  {
+  public BEREncoding
+          ber_encode()
+          throws ASN1Exception {
     return ber_encode(BEREncoding.UNIVERSAL_TAG, TAG);
   }
 
@@ -134,14 +118,11 @@ ber_encode()
    * Returns a BER encoding of the BOOLEAN. Implicitly tagged.
    *
    * @return	The BER encoding of the BOOLEAN
-   * @exception	ASN1Exception when the BOOLEAN is invalid
-   *		and cannot be encoded.
+   * @exception	ASN1Exception when the BOOLEAN is invalid and cannot be encoded.
    */
-
-public BEREncoding
-ber_encode(int tag_type, int tag) 
-       throws ASN1Exception
-  {
+  public BEREncoding
+          ber_encode(int tag_type, int tag)
+          throws ASN1Exception {
     // Generate BER encoding of the Boolean
 
     int[] encoding = new int[1];
@@ -159,13 +140,11 @@ ber_encode(int tag_type, int tag)
   /**
    * Method to set the boolean's value.
    *
-   * @param new_val  the value to set the BOOLEAN to.
+   * @param new_val the value to set the BOOLEAN to.
    * @return BOOLEAN
    */
-
-public ASN1Boolean
-set(boolean new_val)
-  {
+  public ASN1Boolean
+          set(boolean new_val) {
     value = new_val;
     return this;
   }
@@ -176,27 +155,22 @@ set(boolean new_val)
    *
    * @return	the BOOLEAN's current value.
    */
-
-public boolean
-get()
-  {
+  public boolean
+          get() {
     return value;
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value. 
+   * Returns a new String object representing this ASN.1 object's value.
    */
-
-public String
-toString()
-  {
+  public String
+          toString() {
     return ((value) ? "true" : "false");
   }
 
   //================================================================
   // XER (XML Encoding Rules) code
-
   //----------------------------------------------------------------
   /**
    * Produces the XER encoding of the object.
@@ -204,18 +178,14 @@ toString()
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
-
   public void
-    xer_encode(java.io.PrintWriter dest)
-    throws ASN1Exception
-  {
+          xer_encode(java.io.PrintWriter dest)
+          throws ASN1Exception {
     dest.print((value) ? "true" : "false");
   }
 
-
   //================================================================
   // Nested inner-class for parsing XER.
-
   public static class XER_Parser_Proxy extends XERsaxHandler.XER_Parser_Proxy {
 
     private final static int STATE_INIT = 0;
@@ -228,104 +198,94 @@ toString()
     private boolean proxy_value;
 
     //----------------
-
-    public XER_Parser_Proxy()
-    {
+    public XER_Parser_Proxy() {
       super("BOOLEAN");
       state = STATE_INIT;
     }
 
-    public XER_Parser_Proxy(String overriding_xer_tag)
-    {
+    public XER_Parser_Proxy(String overriding_xer_tag) {
       super(overriding_xer_tag);
       state = STATE_INIT;
     }
 
     //----------------
-
     public void startElement(XERsaxHandler handler,
-			     String name,
-			     org.xml.sax.AttributeList atts)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals(xer_tag) &&
-	  state == STATE_INIT) {
-	state = STATE_START_GOT;
+            String name,
+            org.xml.sax.AttributeList atts)
+            throws org.xml.sax.SAXException {
+      if (name.equals(xer_tag)
+              && state == STATE_INIT) {
+        state = STATE_START_GOT;
 
       } else {
-	handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, name);
       }
     }
 
     //----------------
-
     public void endElement(XERsaxHandler handler,
-			   String name)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals(xer_tag) &&
-	  state == STATE_VALUE_GOT) {
-	// Create new Boolean object
-	handler.member_got(new ASN1Boolean(proxy_value));
-	state = STATE_TERM;
+            String name)
+            throws org.xml.sax.SAXException {
+      if (name.equals(xer_tag)
+              && state == STATE_VALUE_GOT) {
+        // Create new Boolean object
+        handler.member_got(new ASN1Boolean(proxy_value));
+        state = STATE_TERM;
 
       } else {
-	handler.throw_end_unexpected(xer_tag, name);
+        handler.throw_end_unexpected(xer_tag, name);
       }
     }
 
     //----------------
-
     public void characters(XERsaxHandler handler,
-			   char[] ch,
-			   int start,
-			   int length)
-      throws org.xml.sax.SAXException
-    {
+            char[] ch,
+            int start,
+            int length)
+            throws org.xml.sax.SAXException {
       int begin = start;
 
       if (state == STATE_START_GOT) {
-	int end = begin + length;
-      
-	while (begin < end && Character.isWhitespace(ch[begin])) {
-	  begin++;
+        int end = begin + length;
+
+        while (begin < end && Character.isWhitespace(ch[begin])) {
+          begin++;
         }
 
-	if (begin < end) {
-	  // Found some non-whitespace characters
+        if (begin < end) {
+          // Found some non-whitespace characters
 
-	  int nws_end = begin + 1;
-	  while (nws_end < end && ! Character.isWhitespace(ch[nws_end])) {
-	    nws_end++;
+          int nws_end = begin + 1;
+          while (nws_end < end && !Character.isWhitespace(ch[nws_end])) {
+            nws_end++;
           }
 
-	  String str = new String(ch, begin, nws_end - begin);
-	  if (str.equals("false")) {
-	    proxy_value = false;
-	  } else if (str.equals("true")) {
-	    proxy_value = true;
-	  } else {
-	    handler.throw_characters_unexpected(xer_tag);
-	  }
+          String str = new String(ch, begin, nws_end - begin);
+          if (str.equals("false")) {
+            proxy_value = false;
+          } else if (str.equals("true")) {
+            proxy_value = true;
+          } else {
+            handler.throw_characters_unexpected(xer_tag);
+          }
 
-	  // Check that remaining characters are all whitespace
-
-	  while (nws_end < end) {
-	    if (! Character.isWhitespace(ch[nws_end])) {
-	      handler.throw_characters_unexpected(xer_tag);
+          // Check that remaining characters are all whitespace
+          while (nws_end < end) {
+            if (!Character.isWhitespace(ch[nws_end])) {
+              handler.throw_characters_unexpected(xer_tag);
             }
 
-	    nws_end++;
-	  }
+            nws_end++;
+          }
 
-	  state = STATE_VALUE_GOT;
+          state = STATE_VALUE_GOT;
 
-	} else {
-	  // All whitespace: ignore
-	}
+        } else {
+          // All whitespace: ignore
+        }
 
       } else {
-	handler.throw_characters_unexpected(xer_tag);
+        handler.throw_characters_unexpected(xer_tag);
       }
     }
 
@@ -351,6 +311,6 @@ toString()
   Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
   Imported sources
 
-  */
+ */
 //----------------------------------------------------------------
 //EOF

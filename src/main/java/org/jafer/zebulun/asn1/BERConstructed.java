@@ -8,7 +8,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
  * the supplied license for more details.
  */
-
 package org.jafer.zebulun.asn1;
 
 import java.io.OutputStream;
@@ -17,25 +16,22 @@ import java.io.OutputStream;
 /**
  * BERConstructed
  *
- * This class represents a BER encoded ASN.1 object which is
- * constructed from component BER encodings.
+ * This class represents a BER encoded ASN.1 object which is constructed from
+ * component BER encodings.
  * <p>
  *
- * Generally it is used to store the BER encoding of constructed types
- * (i.e. SEQUENCE, SEQUENCE OF, SET, and SET OF) The end-of-content
- * octets, if required, must be added to the end of the elements by
- * the creator.
+ * Generally it is used to store the BER encoding of constructed types (i.e.
+ * SEQUENCE, SEQUENCE OF, SET, and SET OF) The end-of-content octets, if
+ * required, must be added to the end of the elements by the creator.
  *
  * @see org.jafer.zebulun.asn1.BEREncoding
  *
  * @version	$Release$ $Date: 1999/04/07 01:23:47 $
  * @author	Hoylen Sue (h.sue@ieee.org)
  */
-
 //----------------------------------------------------------------
+public class BERConstructed extends BEREncoding {
 
-public class BERConstructed extends BEREncoding
-{
   //----------------------------------------------------------------
   /**
    * Constructor for a non-primitive BEREncoding.
@@ -50,10 +46,8 @@ public class BERConstructed extends BEREncoding
    * @see org.jafer.zebulun.asn1.BEREncoding#PRIVATE_TAG
    */
 
-  public 
-  BERConstructed(int asn1_class, int tag, BEREncoding[] elements)
-       throws ASN1Exception
-  {
+  public BERConstructed(int asn1_class, int tag, BEREncoding[] elements)
+          throws ASN1Exception {
     int content_length = 0;
     for (int index = 0; index < elements.length; index++) {
       content_length += elements[index].i_total_length;
@@ -74,11 +68,9 @@ public class BERConstructed extends BEREncoding
    *
    * @param	dest - OutputStream to write encoding to.
    */
-
-public void
-output(OutputStream dest)
-       throws java.io.IOException
-  {
+  public void
+          output(OutputStream dest)
+          throws java.io.IOException {
     output_head(dest);
 
     for (int index = 0; index < content_elements.length; index++) {
@@ -88,55 +80,50 @@ output(OutputStream dest)
 
   //----------------------------------------------------------------
   /**
-   * This method returns the number of BER encoded elements that this
-   * object is made up of to be returned.
-   * 
+   * This method returns the number of BER encoded elements that this object is
+   * made up of to be returned.
+   *
    * @return number of BER encoded elements
    */
-
-public int
-number_components()
-  {
+  public int
+          number_components() {
     return content_elements.length;
   }
 
   //----------------------------------------------------------------
   /**
    * This method allows the elements of the BER encoding to be examined.
-   * @param	index - the index of the BER object required,
-   *            it must be in the range, [0, number_components() - 1]
-   *            
+   *
+   * @param	index - the index of the BER object required, it must be in the
+   * range, [0, number_components() - 1]
+   *
    * @return BER Encoding
    */
-
-public BEREncoding
-elementAt(int index)
-  {
+  public BEREncoding
+          elementAt(int index) {
     return content_elements[index];
   }
 
   //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value. 
+   * Returns a new String object representing this ASN.1 object's value.
    */
-
-public String
-toString()
-  {
+  public String
+          toString() {
     StringBuffer str = new StringBuffer("[");
     switch (i_tag_type) {
-    case BEREncoding.UNIVERSAL_TAG:
-      str.append("UNIVERSAL ");
-      break;
-    case BEREncoding.APPLICATION_TAG:
-      str.append("APPLICATION ");
-      break;
-    case BEREncoding.CONTEXT_SPECIFIC_TAG:
-      str.append("CONTEXT SPECIFIC ");
-      break;
-    case BEREncoding.PRIVATE_TAG:
-      str.append("PRIVATE ");
-      break;
+      case BEREncoding.UNIVERSAL_TAG:
+        str.append("UNIVERSAL ");
+        break;
+      case BEREncoding.APPLICATION_TAG:
+        str.append("APPLICATION ");
+        break;
+      case BEREncoding.CONTEXT_SPECIFIC_TAG:
+        str.append("CONTEXT SPECIFIC ");
+        break;
+      case BEREncoding.PRIVATE_TAG:
+        str.append("PRIVATE ");
+        break;
     }
     str.append(String.valueOf(i_tag) + "]{");
 
@@ -147,7 +134,7 @@ toString()
 
       str.append(content_elements[x].toString());
     }
-    
+
     str.append('}');
 
     return new String(str);
@@ -157,10 +144,8 @@ toString()
   /**
    * This protected method is used to implement the "get_encoding" method.
    */
-
-protected int
-i_encoding_get(int offset, byte[] data)
-  {
+  protected int
+          i_encoding_get(int offset, byte[] data) {
     int result = i_get_head(offset, data);
 
     for (int index = 0; index < content_elements.length; index++) {
@@ -172,10 +157,9 @@ i_encoding_get(int offset, byte[] data)
 
   //----------------------------------------------------------------
   /**
-   * This variable stores the BER encoding elements which make 
-   * up this constucted BER encoding (in order).
+   * This variable stores the BER encoding elements which make up this
+   * constucted BER encoding (in order).
    */
-
   private BEREncoding[] content_elements;
 
 //  //================================================================
@@ -220,7 +204,6 @@ i_encoding_get(int offset, byte[] data)
 //    
 //    dest.print("</" + title + ">");
 //  }
-
 }
 
 //----------------------------------------------------------------
@@ -244,6 +227,6 @@ i_encoding_get(int offset, byte[] data)
   Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
   Imported sources
 
-  */
+ */
 //----------------------------------------------------------------
 //EOF

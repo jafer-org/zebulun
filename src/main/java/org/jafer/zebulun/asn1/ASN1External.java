@@ -8,7 +8,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
  * the supplied license for more details.
  */
-
 package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
@@ -17,8 +16,8 @@ package org.jafer.zebulun.asn1;
  *
  * The <code>EXTERNAL</code> type represents an external object.
  *
- * According to clause 34.4 of the ASN.1 standard, 
- * the EXTERNAL type can be defined as:
+ * According to clause 34.4 of the ASN.1 standard, the EXTERNAL type can be
+ * defined as:
  *
  * <pre>
  * EXTERNAL := [UNIVERSAL 8] IMPLICIT SEQUENCE {
@@ -32,56 +31,44 @@ package org.jafer.zebulun.asn1;
  *               }
  *             }
  * </pre>
-  *
-  * This construct has been represented by a class with six
-  * variables:
-  *   s_direct_reference,
-  *   s_indirect_reference,
-  *   s_data_value_descriptor,
-  *   c_single_ASN1_type,
-  *   c_octet_Aligned,
-  *   c_arbitrary.
-  * The first three should be set to point to the appropriate object
-  * if present, or null if not.
-  * One of the last three variables should be set to non-null (the choice)
-  * and the rest to null.
-  *
-  * @version	$Release$ $Date: 1999/04/13 07:23:06 $
-  * @author	Hoylen Sue (h.sue@ieee.org)
-  */
+ *
+ * This construct has been represented by a class with six variables:
+ * s_direct_reference, s_indirect_reference, s_data_value_descriptor,
+ * c_single_ASN1_type, c_octet_Aligned, c_arbitrary. The first three should be
+ * set to point to the appropriate object if present, or null if not. One of the
+ * last three variables should be set to non-null (the choice) and the rest to
+ * null.
+ *
+ * @version	$Release$ $Date: 1999/04/13 07:23:06 $
+ * @author	Hoylen Sue (h.sue@ieee.org)
+ */
+//----------------------------------------------------------------
+public final class ASN1External extends ASN1Any {
 
- //----------------------------------------------------------------
-
-public final class ASN1External extends ASN1Any
-{
   /**
    * This constant is the ASN.1 UNIVERSAL tag value for an EXTERNAL.
    */
 
-public final static int TAG = 0x08;
+  public final static int TAG = 0x08;
 
   //----------------------------------------------------------------
   /*
    * The values are stored in these variables.
    */
+  public ASN1ObjectIdentifier s_direct_reference;
+  public ASN1Integer s_indirect_reference;
+  public ASN1ObjectDescriptor s_data_value_descriptor;
 
-public ASN1ObjectIdentifier s_direct_reference;
-public ASN1Integer s_indirect_reference;
-public ASN1ObjectDescriptor s_data_value_descriptor;
-
-public ASN1Any c_singleASN1type;
-public ASN1OctetString c_octetAligned;
-public ASN1BitString c_arbitrary;
+  public ASN1Any c_singleASN1type;
+  public ASN1OctetString c_octetAligned;
+  public ASN1BitString c_arbitrary;
 
   //================================================================
   /**
-   * Constructor for an ASN.1 EXTERNAL object. It sets the tag to the
-   * default value of UNIVERSAL 8.
-    */
-
-  public 
-    ASN1External()
-  {
+   * Constructor for an ASN.1 EXTERNAL object. It sets the tag to the default
+   * value of UNIVERSAL 8.
+   */
+  public ASN1External() {
     // All members automatically set to null
   }
 
@@ -90,14 +77,12 @@ public ASN1BitString c_arbitrary;
    * Constructor for an ASN.1 EXTERNAL object from a BER encoding.
    *
    * @param ber The BER encoding to use.
-   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly
+   * tagged.
    * @exception	ASN1Exception If the BER encoding is incorrect.
    */
-
-  public
-    ASN1External(BEREncoding ber, boolean check_tag)
-    throws ASN1Exception
-  {
+  public ASN1External(BEREncoding ber, boolean check_tag)
+          throws ASN1Exception {
     super(ber, check_tag);
   }
 
@@ -106,26 +91,23 @@ public ASN1BitString c_arbitrary;
    * Method for initializing the object from a BER encoding.
    *
    * @param ber_enc The BER encoding to use.
-   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly
+   * tagged.
    * @exception	ASN1Exception If the BER encoding is incorrect.
    */
-
   public void
-    ber_decode(BEREncoding ber_enc, boolean check_tag)
-    throws ASN1Exception
-  {
+          ber_decode(BEREncoding ber_enc, boolean check_tag)
+          throws ASN1Exception {
     if (check_tag) {
-      if (ber_enc.tag_get() != TAG || 
-	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
-	throw new ASN1EncodingException
-      ("ASN.1 EXTERNAL: bad BER: tag=" + ber_enc.tag_get() + 
-       " expected " + TAG + "\n");
+      if (ber_enc.tag_get() != TAG
+              || ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
+        throw new ASN1EncodingException("ASN.1 EXTERNAL: bad BER: tag=" + ber_enc.tag_get()
+                + " expected " + TAG + "\n");
       }
     }
 
     if (ber_enc instanceof BERPrimitive) {
-      throw new ASN1EncodingException
-	("ASN.1 EXTERNAL: incorrect form, primitive encoding");
+      throw new ASN1EncodingException("ASN.1 EXTERNAL: incorrect form, primitive encoding");
     }
 
     BERConstructed ber = (BERConstructed) ber_enc;
@@ -146,41 +128,40 @@ public ASN1BitString c_arbitrary;
 
     BEREncoding p = ber.elementAt(part);
 
-    if (p.tag_get() == ASN1ObjectIdentifier.TAG &&
-	p.tag_type_get() == BEREncoding.UNIVERSAL_TAG) {
+    if (p.tag_get() == ASN1ObjectIdentifier.TAG
+            && p.tag_type_get() == BEREncoding.UNIVERSAL_TAG) {
       s_direct_reference = new ASN1ObjectIdentifier(p, true);
 
       if (num_parts <= ++part) {
-	throw new ASN1EncodingException("ASN.1 EXTERNAL: incomplete");
+        throw new ASN1EncodingException("ASN.1 EXTERNAL: incomplete");
       }
       p = ber.elementAt(part);
     }
 
-    if (p.tag_get() == ASN1Integer.TAG &&
-	p.tag_type_get() == BEREncoding.UNIVERSAL_TAG) {
+    if (p.tag_get() == ASN1Integer.TAG
+            && p.tag_type_get() == BEREncoding.UNIVERSAL_TAG) {
       s_indirect_reference = new ASN1Integer(p, true);
 
       if (num_parts <= ++part) {
-	throw new ASN1EncodingException("ASN.1 EXTERNAL: incomplete");
+        throw new ASN1EncodingException("ASN.1 EXTERNAL: incomplete");
       }
       p = ber.elementAt(part);
     }
 
-    if (p.tag_get() == ASN1ObjectDescriptor.TAG &&
-	p.tag_type_get() == BEREncoding.UNIVERSAL_TAG) {
+    if (p.tag_get() == ASN1ObjectDescriptor.TAG
+            && p.tag_type_get() == BEREncoding.UNIVERSAL_TAG) {
       s_data_value_descriptor = new ASN1ObjectDescriptor(p, true);
 
       if (num_parts <= ++part) {
-	throw new ASN1EncodingException("ASN.1 EXTERNAL: incomplete");
+        throw new ASN1EncodingException("ASN.1 EXTERNAL: incomplete");
       }
       p = ber.elementAt(part);
     }
 
     // decoding IMPLICIT
-
     switch (p.tag_get()) {
-    case 0:
-      // single_ASN1_type [0] ANY,
+      case 0:
+        // single_ASN1_type [0] ANY,
 
 //???
 // Isite sample zserver seems to have an error and send UNIVERSAL tag
@@ -188,45 +169,39 @@ public ASN1BitString c_arbitrary;
 //      if (p.tag_type_get() != BEREncoding.CONTEXT_SPECIFIC_TAG)
 //        throw new ASN1EncodingException
 //	  ("ASN.1 EXTERNAL: encoding: bad tag type " + p);
+        if (!(p instanceof BERConstructed)) {
+          throw new ASN1EncodingException("ASN.1 EXTERNAL: singleASN1type: bad form, primitive");
+        }
 
-      if (! (p instanceof BERConstructed)) {
-	throw new ASN1EncodingException
-	  ("ASN.1 EXTERNAL: singleASN1type: bad form, primitive");
-      }
+        if (((BERConstructed) p).number_components() != 1) {
+          throw new ASN1EncodingException("ASN.1 EXTERNAL: singleASN1type: bad form, no explicit tag");
+        }
 
-      if (((BERConstructed) p).number_components() != 1) {
-	throw new ASN1EncodingException
-	  ("ASN.1 EXTERNAL: singleASN1type: bad form, no explicit tag");
-      }
+        c_singleASN1type = ASN1Decoder.toASN1(((BERConstructed) p).elementAt(0));
+        break;
 
-      c_singleASN1type = ASN1Decoder.toASN1(((BERConstructed)p).elementAt(0));
-      break;
+      case 1:
+        // octet_Aligned [1] IMPLICIT OCTET STRING
 
-    case 1:
-      // octet_Aligned [1] IMPLICIT OCTET STRING
+        if (p.tag_type_get() != BEREncoding.CONTEXT_SPECIFIC_TAG) {
+          throw new ASN1EncodingException("ASN.1 EXTERNAL: encoding: bad tag type " + p);
+        }
 
-      if (p.tag_type_get() != BEREncoding.CONTEXT_SPECIFIC_TAG) {
-        throw new ASN1EncodingException
-	  ("ASN.1 EXTERNAL: encoding: bad tag type " + p);
-      }
+        c_octetAligned = new ASN1OctetString(p, false);
+        break;
 
-      c_octetAligned = new ASN1OctetString(p, false);
-      break;
+      case 2:
+        // arbitrary [2] IMPLICIT BIT STRING
 
-    case 2:
-      // arbitrary [2] IMPLICIT BIT STRING
+        if (p.tag_type_get() != BEREncoding.CONTEXT_SPECIFIC_TAG) {
+          throw new ASN1EncodingException("ASN.1 EXTERNAL: encoding: bad tag type " + p);
+        }
 
-      if (p.tag_type_get() != BEREncoding.CONTEXT_SPECIFIC_TAG) {
-        throw new ASN1EncodingException
-	  ("ASN.1 EXTERNAL: encoding: bad tag type " + p);
-      }
+        c_arbitrary = new ASN1BitString(p, false);
+        break;
 
-      c_arbitrary = new ASN1BitString(p, false);
-      break;
-
-    default:
-      throw new ASN1EncodingException
-	("ASN.1 EXTERNAL: encoding: tag = " + p.tag_get());
+      default:
+        throw new ASN1EncodingException("ASN.1 EXTERNAL: encoding: tag = " + p.tag_get());
     }
 
     if (part != (num_parts - 1)) {
@@ -237,30 +212,28 @@ public ASN1BitString c_arbitrary;
   //----------------------------------------------------------------
   /**
    * Returns a BER encoding of the EXTERNAL.
+   *
    * @return	The BER encoding of the EXTERNAL
-   * @exception	ASN1Exception when the EXTERNAL is invalid 
-   *            and cannot be encoded.
-    */
-
+   * @exception	ASN1Exception when the EXTERNAL is invalid and cannot be
+   * encoded.
+   */
   public BEREncoding
-    ber_encode()
-    throws ASN1Exception
-  {
+          ber_encode()
+          throws ASN1Exception {
     return ber_encode(BEREncoding.UNIVERSAL_TAG, TAG);
   }
 
   //----------------------------------------------------------------
   /**
    * Returns a BER encoding of the EXTERNAL.
+   *
    * @return	The BER encoding of the EXTERNAL
-   * @exception	ASN1Exception when the EXTERNAL is invalid
-   *		and cannot be encoded.
-    */
-
+   * @exception	ASN1Exception when the EXTERNAL is invalid and cannot be
+   * encoded.
+   */
   public BEREncoding
-    ber_encode(int tag_type, int tag)
-    throws ASN1Exception
-  {
+          ber_encode(int tag_type, int tag)
+          throws ASN1Exception {
     // Calculate length of encoding
 
     int num_parts = 0;
@@ -292,8 +265,7 @@ public ASN1BitString c_arbitrary;
       num_parts++;
     }
 
-     // Encode it
-
+    // Encode it
     BEREncoding[] parts = new BEREncoding[num_parts];
 
     int part = 0;
@@ -309,21 +281,20 @@ public ASN1BitString c_arbitrary;
     }
 
     // Encode the choice
-
     if (c_singleASN1type != null) {
       // explicit tag
       BEREncoding[] contents = new BEREncoding[1];
       contents[0] = c_singleASN1type.ber_encode();
-      parts[part] = new BERConstructed(BEREncoding.CONTEXT_SPECIFIC_TAG, 0, 
-				       contents);
+      parts[part] = new BERConstructed(BEREncoding.CONTEXT_SPECIFIC_TAG, 0,
+              contents);
 
     } else if (c_octetAligned != null) {
       parts[part] = c_octetAligned.ber_encode(BEREncoding.CONTEXT_SPECIFIC_TAG,
-					      1);
+              1);
 
     } else if (c_arbitrary != null) {
       parts[part] = c_arbitrary.ber_encode(BEREncoding.CONTEXT_SPECIFIC_TAG,
-					   2);
+              2);
     }
 
     return new BERConstructed(tag_type, tag, parts);
@@ -331,12 +302,10 @@ public ASN1BitString c_arbitrary;
 
 //----------------------------------------------------------------
   /**
-   * Returns a new String object representing this ASN.1 object's value. 
+   * Returns a new String object representing this ASN.1 object's value.
    */
-
   public String
-    toString()
-  {
+          toString() {
     StringBuffer str = new StringBuffer("{");
     boolean has_element = false;
 
@@ -348,7 +317,7 @@ public ASN1BitString c_arbitrary;
 
     if (s_indirect_reference != null) {
       if (has_element) {
-	str.append(", ");
+        str.append(", ");
       }
       str.append("indirectReference ");
       str.append(s_indirect_reference);
@@ -357,7 +326,7 @@ public ASN1BitString c_arbitrary;
 
     if (s_data_value_descriptor != null) {
       if (has_element) {
-	str.append(", ");
+        str.append(", ");
       }
       str.append("dataValueDescriptor ");
       str.append(s_data_value_descriptor);
@@ -391,7 +360,6 @@ public ASN1BitString c_arbitrary;
 
   //================================================================
   // XER (XML Encoding Rules) code
-
   //----------------------------------------------------------------
   /**
    * Produces the XER encoding of the object.
@@ -399,11 +367,9 @@ public ASN1BitString c_arbitrary;
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
-
   public void
-    xer_encode(java.io.PrintWriter dest)
-    throws ASN1Exception
-  {
+          xer_encode(java.io.PrintWriter dest)
+          throws ASN1Exception {
     if (s_direct_reference != null) {
       dest.print("<xer:direct-reference>");
       s_direct_reference.xer_encode(dest);
@@ -432,7 +398,7 @@ public ASN1BitString c_arbitrary;
 
     if (c_octetAligned != null) {
       dest.print("<xer:octet-aligned>");
-       c_octetAligned.xer_encode(dest);
+      c_octetAligned.xer_encode(dest);
       dest.print("</xer:octet-aligned>");
     }
 
@@ -447,7 +413,6 @@ public ASN1BitString c_arbitrary;
 
   //================================================================
   // Nested inner-class for parsing XER.
-
   public static class XER_Parser_Proxy extends XERsaxHandler.XER_Parser_Proxy {
 
     private final static int STATE_INIT = 0;
@@ -469,159 +434,146 @@ public ASN1BitString c_arbitrary;
     private ASN1External proxy_value;
 
     //----------------
-
-    public XER_Parser_Proxy()
-    {
+    public XER_Parser_Proxy() {
       super("EXTERNAL");
       proxy_value = new ASN1External();
       istate = STATE_INIT;
     }
 
-    public XER_Parser_Proxy(String overriding_xer_tag)
-    {
+    public XER_Parser_Proxy(String overriding_xer_tag) {
       super(overriding_xer_tag);
       proxy_value = new ASN1External();
       istate = STATE_INIT;
     }
 
     //----------------
-
     public void startElement(XERsaxHandler handler,
-			     String name,
-			     org.xml.sax.AttributeList atts)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals(xer_tag) &&
-	  istate == STATE_INIT) {
-	istate = STATE_EXTERNAL_GETTING;
+            String name,
+            org.xml.sax.AttributeList atts)
+            throws org.xml.sax.SAXException {
+      if (name.equals(xer_tag)
+              && istate == STATE_INIT) {
+        istate = STATE_EXTERNAL_GETTING;
 
-      } else if (name.equals("direct-reference") &&
-		 istate == STATE_EXTERNAL_GETTING) {
-	istate = STATE_DIRECT_REFERENCE_GETTING;
-	handler.member_expect(new ASN1ObjectIdentifier.XER_Parser_Proxy("direct-reference"));
-	handler.startElement(name, atts);
+      } else if (name.equals("direct-reference")
+              && istate == STATE_EXTERNAL_GETTING) {
+        istate = STATE_DIRECT_REFERENCE_GETTING;
+        handler.member_expect(new ASN1ObjectIdentifier.XER_Parser_Proxy("direct-reference"));
+        handler.startElement(name, atts);
 
-      } else if (name.equals("indirect-reference") &&
-		 (istate == STATE_EXTERNAL_GETTING ||
-		  istate == STATE_DIRECT_REFERENCE_GOT)) {
-	istate = STATE_INDIRECT_REFERENCE_GETTING;
-	handler.member_expect(new ASN1Integer.XER_Parser_Proxy("indirect-reference"));
-	handler.startElement(name, atts);
+      } else if (name.equals("indirect-reference")
+              && (istate == STATE_EXTERNAL_GETTING
+              || istate == STATE_DIRECT_REFERENCE_GOT)) {
+        istate = STATE_INDIRECT_REFERENCE_GETTING;
+        handler.member_expect(new ASN1Integer.XER_Parser_Proxy("indirect-reference"));
+        handler.startElement(name, atts);
 
-      } else if (name.equals("data-value-descriptor") &&
-		 (istate == STATE_EXTERNAL_GETTING ||
-		  istate == STATE_DIRECT_REFERENCE_GOT ||
-		  istate == STATE_INDIRECT_REFERENCE_GOT)) {
-	istate = STATE_DATA_VALUE_DESCRIPTOR_GETTING;
-	handler.member_expect(new
-			      ASN1ObjectDescriptor.XER_Parser_Proxy("data-value-descriptor"));
-	handler.startElement(name, atts);
-	
-      } else if (name.equals("encoding") &&
-		 (istate == STATE_EXTERNAL_GETTING ||
-		  istate == STATE_DIRECT_REFERENCE_GOT ||
-		  istate == STATE_INDIRECT_REFERENCE_GOT ||
-		  istate == STATE_DATA_VALUE_DESCRIPTOR_GOT)) {
-	istate = STATE_ENCODING_GETTING;
+      } else if (name.equals("data-value-descriptor")
+              && (istate == STATE_EXTERNAL_GETTING
+              || istate == STATE_DIRECT_REFERENCE_GOT
+              || istate == STATE_INDIRECT_REFERENCE_GOT)) {
+        istate = STATE_DATA_VALUE_DESCRIPTOR_GETTING;
+        handler.member_expect(new ASN1ObjectDescriptor.XER_Parser_Proxy("data-value-descriptor"));
+        handler.startElement(name, atts);
 
-      } else if (name.equals("single-ASN1-type") &&
-		 istate == STATE_ENCODING_GETTING) {
-	istate = STATE_SINGLE_ASN1_TYPE_GETTING;
-	throw new org.xml.sax.SAXException("XER Parser: " +
-					   "EXTERNAL single-ASN1-type: " +
-					   "not implemented yet"); //???
+      } else if (name.equals("encoding")
+              && (istate == STATE_EXTERNAL_GETTING
+              || istate == STATE_DIRECT_REFERENCE_GOT
+              || istate == STATE_INDIRECT_REFERENCE_GOT
+              || istate == STATE_DATA_VALUE_DESCRIPTOR_GOT)) {
+        istate = STATE_ENCODING_GETTING;
 
-      } else if (name.equals("octet-aligned") &&
-		 istate == STATE_ENCODING_GETTING) {
-	istate = STATE_OCTET_ALIGNED_GETTING;
-	handler.member_expect(new
-			      ASN1OctetString.XER_Parser_Proxy("octet-aligned"));
-	handler.startElement(name, atts);
+      } else if (name.equals("single-ASN1-type")
+              && istate == STATE_ENCODING_GETTING) {
+        istate = STATE_SINGLE_ASN1_TYPE_GETTING;
+        throw new org.xml.sax.SAXException("XER Parser: "
+                + "EXTERNAL single-ASN1-type: "
+                + "not implemented yet"); //???
 
-      } else if (name.equals("arbitrary") &&
-		 istate == STATE_ENCODING_GETTING) {
-	istate = STATE_ARBITRARY_GETTING;
-	handler.member_expect(new ASN1BitString.XER_Parser_Proxy("arbitrary"));
-	handler.startElement(name, atts);
+      } else if (name.equals("octet-aligned")
+              && istate == STATE_ENCODING_GETTING) {
+        istate = STATE_OCTET_ALIGNED_GETTING;
+        handler.member_expect(new ASN1OctetString.XER_Parser_Proxy("octet-aligned"));
+        handler.startElement(name, atts);
+
+      } else if (name.equals("arbitrary")
+              && istate == STATE_ENCODING_GETTING) {
+        istate = STATE_ARBITRARY_GETTING;
+        handler.member_expect(new ASN1BitString.XER_Parser_Proxy("arbitrary"));
+        handler.startElement(name, atts);
 
       } else {
-	handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, name);
       }
     }
 
     //----------------
-
     public void endElement(XERsaxHandler handler,
-			   String name)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals("encoding") &&
-	  istate == STATE_ENCODING_GOT) {
-	istate = STATE_ENCODING_GOT;
-	
-      } else if (name.equals(xer_tag) &&
-		 istate == STATE_ENCODING_GOT) {
-	istate = STATE_TERM;
-	handler.member_got(proxy_value);
+            String name)
+            throws org.xml.sax.SAXException {
+      if (name.equals("encoding")
+              && istate == STATE_ENCODING_GOT) {
+        istate = STATE_ENCODING_GOT;
+
+      } else if (name.equals(xer_tag)
+              && istate == STATE_ENCODING_GOT) {
+        istate = STATE_TERM;
+        handler.member_got(proxy_value);
 
       } else {
-	handler.throw_end_unexpected(xer_tag, name);
+        handler.throw_end_unexpected(xer_tag, name);
       }
     }
 
     //----------------
-
     public void characters(XERsaxHandler handler,
-			   char[] ch,
-			   int start,
-			   int length)
-      throws org.xml.sax.SAXException
-    {
+            char[] ch,
+            int start,
+            int length)
+            throws org.xml.sax.SAXException {
       // All characters must be whitespace
 
       int begin = start;
       int end = begin + length;
 
       while (begin < end && Character.isWhitespace(ch[begin])) {
-	begin++;
+        begin++;
       }
 
       if (begin < end) {
-	handler.throw_characters_unexpected(xer_tag);
+        handler.throw_characters_unexpected(xer_tag);
       }
     }
 
     //----------------
-
     public void member(XERsaxHandler handler, ASN1Any result)
-      throws org.xml.sax.SAXException
-    {
+            throws org.xml.sax.SAXException {
       if (istate == STATE_DIRECT_REFERENCE_GETTING) {
-	proxy_value.s_direct_reference = (ASN1ObjectIdentifier) result;
-	istate = STATE_DIRECT_REFERENCE_GOT;
+        proxy_value.s_direct_reference = (ASN1ObjectIdentifier) result;
+        istate = STATE_DIRECT_REFERENCE_GOT;
 
       } else if (istate == STATE_INDIRECT_REFERENCE_GETTING) {
-	proxy_value.s_indirect_reference = (ASN1Integer) result;
-	istate = STATE_INDIRECT_REFERENCE_GOT;
+        proxy_value.s_indirect_reference = (ASN1Integer) result;
+        istate = STATE_INDIRECT_REFERENCE_GOT;
 
       } else if (istate == STATE_DATA_VALUE_DESCRIPTOR_GETTING) {
-	proxy_value.s_data_value_descriptor = (ASN1ObjectDescriptor) result;
-	istate = STATE_DATA_VALUE_DESCRIPTOR_GOT;
+        proxy_value.s_data_value_descriptor = (ASN1ObjectDescriptor) result;
+        istate = STATE_DATA_VALUE_DESCRIPTOR_GOT;
 
       } else if (istate == STATE_SINGLE_ASN1_TYPE_GETTING) {
-	proxy_value.c_singleASN1type = result;
-	istate = STATE_ENCODING_GOT;
+        proxy_value.c_singleASN1type = result;
+        istate = STATE_ENCODING_GOT;
 
       } else if (istate == STATE_OCTET_ALIGNED_GETTING) {
-	proxy_value.c_octetAligned = (ASN1OctetString) result;
-	istate = STATE_ENCODING_GOT;
+        proxy_value.c_octetAligned = (ASN1OctetString) result;
+        istate = STATE_ENCODING_GOT;
 
       } else if (istate == STATE_ARBITRARY_GETTING) {
-	proxy_value.c_arbitrary = (ASN1BitString) result;
-	istate = STATE_ENCODING_GOT;
+        proxy_value.c_arbitrary = (ASN1BitString) result;
+        istate = STATE_ENCODING_GOT;
 
       } else {
-	handler.throw_member_unexpected(xer_tag);
+        handler.throw_member_unexpected(xer_tag);
       }
 
     }
@@ -651,6 +603,6 @@ public ASN1BitString c_arbitrary;
   Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
   Imported sources
 
-  */
+ */
 //----------------------------------------------------------------
 //EOF

@@ -8,7 +8,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
  * the supplied license for more details.
  */
-
 package org.jafer.zebulun.asn1;
 
 import java.io.*;
@@ -17,57 +16,49 @@ import java.io.*;
 /**
  * Representation of an ASN.1 OCTET STRING.
  *
- * This class is used to store an ASN.1 OCTET STRING which is an 
- * arbitary string of octets (eight-bit values). An OCTET STRING
- * can have any length including zero. The type is a string type.
+ * This class is used to store an ASN.1 OCTET STRING which is an arbitary string
+ * of octets (eight-bit values). An OCTET STRING can have any length including
+ * zero. The type is a string type.
  *
  * @version	$Release$ $Date: 1999/04/13 07:23:07 $
  * @author	Hoylen Sue (h.sue@ieee.org)
  */
-
 //----------------------------------------------------------------
+public class ASN1OctetString extends ASN1Any {
 
-public class ASN1OctetString extends ASN1Any
-{
   /**
    * This constant is the ASN.1 UNIVERSAL tag value for OCTET STRING.
    */
 
-public final static int TAG = 0x04;
+  public final static int TAG = 0x04;
 
   //----------------------------------------------------------------
   /**
-   * Constructor for an OCTET STRING object. The tag is set to the
-   * default of UNIVERSAL 4, and its value to the given bytes.
-   * 
+   * Constructor for an OCTET STRING object. The tag is set to the default of
+   * UNIVERSAL 4, and its value to the given bytes.
+   *
    * @param data	value
    */
-
-public 
-ASN1OctetString(byte[] data)
-  {
+  public ASN1OctetString(byte[] data) {
     octets = new byte[data.length];
-    for (int i = 0; i<data.length; i++) {
-        octets[i] = data[i];
+    for (int i = 0; i < data.length; i++) {
+      octets[i] = data[i];
     }
   }
 
   //----------------------------------------------------------------
   /**
-   * Constructor for an OCTET STRING object. The tag is set to the
-   * default of UNIVERSAL 4, and its value to the lower bytes of the
-   * characters of the given string.
-   * 
+   * Constructor for an OCTET STRING object. The tag is set to the default of
+   * UNIVERSAL 4, and its value to the lower bytes of the characters of the
+   * given string.
+   *
    * @param str	value
    */
-
-public 
-ASN1OctetString(String str)
-  {
+  public ASN1OctetString(String str) {
     try {
-        octets = str.getBytes("ISO-8859-1");
+      octets = str.getBytes("ISO-8859-1");
     } catch (UnsupportedEncodingException ex) {
-        octets = str.getBytes();
+      octets = str.getBytes();
     }
   }
 
@@ -76,14 +67,12 @@ ASN1OctetString(String str)
    * Constructor for a OCTET STRING object from a primitive BER encoding.
    *
    * @param ber The BER encoding to use.
-   * @param check_tag If true, it checks the tag. Use false if is implicitly tagged.
+   * @param check_tag If true, it checks the tag. Use false if is implicitly
+   * tagged.
    * @exception	ASN1Exception If the BER encoding is incorrect.
    */
-
-public
-ASN1OctetString(BEREncoding ber, boolean check_tag)
-       throws ASN1Exception
-  {
+  public ASN1OctetString(BEREncoding ber, boolean check_tag)
+          throws ASN1Exception {
     super(ber, check_tag); // superclass will call ber_decode
   }
 
@@ -95,17 +84,14 @@ ASN1OctetString(BEREncoding ber, boolean check_tag)
    * @param check_tag If true, it checks the tag. Does nothing for ASN1Any.
    * @exception	ASN1EncodingException If the BER cannot be decoded.
    */
-
-public void
-ber_decode(BEREncoding ber_enc, boolean check_tag)
-       throws ASN1EncodingException
-  {
+  public void
+          ber_decode(BEREncoding ber_enc, boolean check_tag)
+          throws ASN1EncodingException {
     if (check_tag) {
-      if (ber_enc.tag_get() != TAG || 
-	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
-	throw new ASN1EncodingException
-	  ("ASN.1 OCTET STRING: bad BER: tag=" + ber_enc.tag_get() + 
-	   " expected " + TAG + "\n");
+      if (ber_enc.tag_get() != TAG
+              || ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
+        throw new ASN1EncodingException("ASN.1 OCTET STRING: bad BER: tag=" + ber_enc.tag_get()
+                + " expected " + TAG + "\n");
       }
     }
 
@@ -117,67 +103,57 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
       StringBuffer buf = new StringBuffer(encoding.length);
 
       for (int x = 0; x < encoding.length; x++) {
-	buf.append((char) (encoding[x] & 0x00ff));
+        buf.append((char) (encoding[x] & 0x00ff));
       }
 
-    try {
+      try {
         octets = new String(buf).getBytes("ISO-8859-1");
-    } catch (UnsupportedEncodingException ex) {
+      } catch (UnsupportedEncodingException ex) {
         octets = new String(buf).getBytes();
-    }
+      }
 
     } else {
       // not implemented yet ???
 
-      throw new ASN1EncodingException
-	("ASN.1 OCTET STRING: decode from constructed NOT IMPLEMENTED YET");
+      throw new ASN1EncodingException("ASN.1 OCTET STRING: decode from constructed NOT IMPLEMENTED YET");
     }
   }
 
   //----------------------------------------------------------------
-
   /**
    * Makes a BER encoding of the OCTET STRING.
    *
-   * OCTET STRINGs can have a primitive encoding and a constructed
-   * encoding. This implemented performs the primitive encoding (which
-   * is the DER form).
+   * OCTET STRINGs can have a primitive encoding and a constructed encoding.
+   * This implemented performs the primitive encoding (which is the DER form).
    *
    * @return	The BER encoding of the OCTET STRING
-   * @exception	ASN1Exception when the OCTET STRING is invalid
-   *		and cannot be encoded.
+   * @exception	ASN1Exception when the OCTET STRING is invalid and cannot be
+   * encoded.
    */
-
-public BEREncoding
-ber_encode()
-       throws ASN1Exception
-  {
+  public BEREncoding
+          ber_encode()
+          throws ASN1Exception {
     return ber_encode(BEREncoding.UNIVERSAL_TAG, TAG);
   }
 
   //----------------------------------------------------------------
-
   /**
    * Makes a BER encoding of the OCTET STRING.
    *
-   * OCTET STRINGs can have a primitive encoding and a constructed
-   * encoding. This implemented performs the primitive encoding (which
-   * is the DER form).
+   * OCTET STRINGs can have a primitive encoding and a constructed encoding.
+   * This implemented performs the primitive encoding (which is the DER form).
    *
    * @return	The BER encoding of the OCTET STRING
-   * @exception	ASN1Exception when the OCTET STRING is invalid
-   *		and cannot be encoded.
+   * @exception	ASN1Exception when the OCTET STRING is invalid and cannot be
+   * encoded.
    */
-
-public BEREncoding
-ber_encode(int tag_type, int tag)
-       throws ASN1Exception
-  {
+  public BEREncoding
+          ber_encode(int tag_type, int tag)
+          throws ASN1Exception {
     int size = octets.length;
     int[] encoding = new int[size];
 
     // Generate BER encoding of the Octet String
-
     for (int index = 0; index < size; index++) {
       encoding[index] = octets[index] & 0x00ff;
     }
@@ -189,18 +165,16 @@ ber_encode(int tag_type, int tag)
   /**
    * Method to set the OCTET STRING's value.
    *
-   * @param octet_array  the value to set the OCTET STRING to.
+   * @param octet_array the value to set the OCTET STRING to.
    * @return	the object.
    */
+  public ASN1OctetString
+          set(byte[] octet_array) {
 
-public ASN1OctetString
-set(byte[] octet_array)
-  {
-
-      octets = new byte[octet_array.length];
-      for (int i = 0; i<octet_array.length; i++) {
-          octets[i] = octet_array[i];
-      }
+    octets = new byte[octet_array.length];
+    for (int i = 0; i < octet_array.length; i++) {
+      octets[i] = octet_array[i];
+    }
     return this;
   }
 
@@ -208,13 +182,11 @@ set(byte[] octet_array)
   /**
    * Method to set the OCTET STRING's value.
    *
-   * @param	str  the value to set the OCTET STRING to.
+   * @param	str the value to set the OCTET STRING to.
    * @return	the object.
    */
-
-public ASN1OctetString
-set(String str)
-  {
+  public ASN1OctetString
+          set(String str) {
     try {
       octets = str.getBytes("ISO-8859-1");
     } catch (UnsupportedEncodingException ex) {
@@ -229,14 +201,12 @@ set(String str)
    *
    * @return	the OCTET STRING's current value.
    */
-
-public String
-get()
-  {
+  public String
+          get() {
     try {
-        return new String(octets, "ISO-8859-1");
+      return new String(octets, "ISO-8859-1");
     } catch (UnsupportedEncodingException ex) {
-        return new String(octets);
+      return new String(octets);
     }
   }
 
@@ -246,15 +216,12 @@ get()
    *
    * @return	the OCTET STRING's current value.
    */
-
-public byte[]
-get_bytes()
-  {
-      return octets;
+  public byte[]
+          get_bytes() {
+    return octets;
   }
 
   //----------------------------------------------------------------
-
   private final static char[] oct = {
     '0', '1', '2', '3', '4', '5', '6', '7'
   };
@@ -265,29 +232,26 @@ get_bytes()
   };
 
   /**
-   * Returns a new String object representing this ASN.1 object's value. 
+   * Returns a new String object representing this ASN.1 object's value.
    */
-
-public String
-toString()
-  {
+  public String
+          toString() {
     int size = octets.length;
     // Buffer: make it big just in case everything needs to be encoded
     StringBuffer buf = new StringBuffer(32 + (size * 4));
 
     // Determine whether to use hexadecimal form or text form
-
     int printable = 0;
     int binary = 0;
 
     for (int x = 0; x < size; x++) {
-      char octet = (char)octets[x];
+      char octet = (char) octets[x];
 
-      if ((' ' <= octet && octet <= '~') ||
-	  octet == '\n') {
-	printable++;
+      if ((' ' <= octet && octet <= '~')
+              || octet == '\n') {
+        printable++;
       } else {
-	binary++;
+        binary++;
       }
     }
 
@@ -297,37 +261,37 @@ toString()
       buf.append('"');
 
       for (int x = 0; x < size; x++) {
-	char octet = (char)octets[x];
+        char octet = (char) octets[x];
 
-	if (' ' <= octet && octet <= '~') {
-	  // Printable character
+        if (' ' <= octet && octet <= '~') {
+          // Printable character
 
-	  if (octet == '\\' || octet == '"' || octet == '\'') {
-	    buf.append('\\'); // escape character
-	  }
+          if (octet == '\\' || octet == '"' || octet == '\'') {
+            buf.append('\\'); // escape character
+          }
 
-	  buf.append(octet);
+          buf.append(octet);
 
-	} else if (octet == '\n') {
-	  buf.append("\\n");
-	} else if (octet == '\t') {
-	  buf.append("\\t");
-	} else if (octet == '\r') {
-	  buf.append("\\r");
-	} else if (octet == '\b') {
-	  buf.append("\\b");
-	} else if (octet == '\f') {
-	  buf.append("\\f");
+        } else if (octet == '\n') {
+          buf.append("\\n");
+        } else if (octet == '\t') {
+          buf.append("\\t");
+        } else if (octet == '\r') {
+          buf.append("\\r");
+        } else if (octet == '\b') {
+          buf.append("\\b");
+        } else if (octet == '\f') {
+          buf.append("\\f");
 
-	} else {
-	  // Unprintable characters, use octal escape
+        } else {
+          // Unprintable characters, use octal escape
 
-	  buf.append('\\');
-	
-	  buf.append(oct[((octet >> 6) & 0x07)]);
-	  buf.append(oct[((octet >> 3) & 0x07)]);
-	  buf.append(oct[(octet & 0x07)]);
-	}
+          buf.append('\\');
+
+          buf.append(oct[((octet >> 6) & 0x07)]);
+          buf.append(oct[((octet >> 3) & 0x07)]);
+          buf.append(oct[(octet & 0x07)]);
+        }
       }
       buf.append('"');
 
@@ -337,10 +301,10 @@ toString()
       buf.append('\'');
 
       for (int x = 0; x < size; x++) {
-	char octet = (char)octets[x];
+        char octet = (char) octets[x];
 
-	buf.append(hex[((octet >> 4) & 0x0f)]);
-	buf.append(hex[(octet & 0x0f)]);
+        buf.append(hex[((octet >> 4) & 0x0f)]);
+        buf.append(hex[(octet & 0x0f)]);
       }
 
       buf.append("'H");
@@ -351,15 +315,13 @@ toString()
 
   //================================================================
   /**
-   * The values of the OCTET STRING are stored in this string. Only
-   * the lower bytes are valid.
+   * The values of the OCTET STRING are stored in this string. Only the lower
+   * bytes are valid.
    */
-
-private byte[] octets;
+  private byte[] octets;
 
   //================================================================
   // XER (XML Encoding Rules) code
-
   //----------------------------------------------------------------
   /**
    * Produces the XER encoding of the object.
@@ -367,29 +329,26 @@ private byte[] octets;
    * @param	dest the destination XER encoding is written to
    * @exception ASN1Exception if data is invalid.
    */
-
   public void
-    xer_encode(java.io.PrintWriter dest)
-    throws ASN1Exception
-  {
+          xer_encode(java.io.PrintWriter dest)
+          throws ASN1Exception {
     int size = octets.length;
 
     // Determine whether to use hexadecimal form or text form
-
     int printable = 0;
     int nonprintable = 0;
 
     for (int x = 0; x < size; x++) {
-      char octet = (char)octets[x];
+      char octet = (char) octets[x];
 
-      if ((' ' <= octet && octet <= '~' &&
-           octet != '&' &&
-           octet != '<' &&
-           octet != '>') ||
-	  octet == '\n') {
-	printable++;
+      if ((' ' <= octet && octet <= '~'
+              && octet != '&'
+              && octet != '<'
+              && octet != '>')
+              || octet == '\n') {
+        printable++;
       } else {
-	nonprintable++;
+        nonprintable++;
       }
     }
 
@@ -397,7 +356,7 @@ private byte[] octets;
       // Display as a printable string
 
       for (int x = 0; x < size; x++) {
-        dest.print((char)octets[x]);
+        dest.print((char) octets[x]);
       }
 
     } else {
@@ -406,10 +365,10 @@ private byte[] octets;
       dest.print("<xer:Hex>");
 
       for (int x = 0; x < size; x++) {
-	char octet = (char)octets[x];
+        char octet = (char) octets[x];
 
-	dest.print(hex[((octet >> 4) & 0x0f)]);
-	dest.print(hex[(octet & 0x0f)]);
+        dest.print(hex[((octet >> 4) & 0x0f)]);
+        dest.print(hex[(octet & 0x0f)]);
       }
 
       dest.print("</xer:Hex>");
@@ -418,7 +377,6 @@ private byte[] octets;
 
   //================================================================
   // Nested inner-class for parsing XER.
-
   public static class XER_Parser_Proxy extends XERsaxHandler.XER_Parser_Proxy {
 
     private final static int STATE_INIT = 0;
@@ -431,93 +389,80 @@ private byte[] octets;
     protected String proxy_value;
 
     //----------------
-
-    public XER_Parser_Proxy()
-    {
+    public XER_Parser_Proxy() {
       super("OCTET_STRING");
       state = STATE_INIT;
     }
 
-    public XER_Parser_Proxy(String overriding_xer_tag)
-    {
+    public XER_Parser_Proxy(String overriding_xer_tag) {
       super(overriding_xer_tag);
       state = STATE_INIT;
     }
 
     //----------------
-
     public void startElement(XERsaxHandler handler,
-			     String name,
-			     org.xml.sax.AttributeList atts)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals(xer_tag) &&
-	  state == STATE_INIT) {
-	proxy_value = ""; // empty string
-	state = STATE_START_GOT;
+            String name,
+            org.xml.sax.AttributeList atts)
+            throws org.xml.sax.SAXException {
+      if (name.equals(xer_tag)
+              && state == STATE_INIT) {
+        proxy_value = ""; // empty string
+        state = STATE_START_GOT;
 
       } else {
-	handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, name);
       }
 
     }
 
     //----------------
-
     public void endElement(XERsaxHandler handler,
-			   String name)
-      throws org.xml.sax.SAXException
-    {
-      if (name.equals(xer_tag) &&
-	  state == STATE_VALUE_GOT) {
-	// Create new OCTET STRING object
+            String name)
+            throws org.xml.sax.SAXException {
+      if (name.equals(xer_tag)
+              && state == STATE_VALUE_GOT) {
+        // Create new OCTET STRING object
 
-	handler.member_got(new ASN1OctetString(proxy_value));
+        handler.member_got(new ASN1OctetString(proxy_value));
 
-	state = STATE_TERM;
+        state = STATE_TERM;
 
       } else {
-	handler.throw_end_unexpected(xer_tag, name);
+        handler.throw_end_unexpected(xer_tag, name);
       }
     }
 
     //----------------
-
     public void characters(XERsaxHandler handler,
-			   char[] ch,
-			   int start,
-			   int length)
-      throws org.xml.sax.SAXException
-    {
+            char[] ch,
+            int start,
+            int length)
+            throws org.xml.sax.SAXException {
       int begin = start;
 
       if (state == STATE_START_GOT) {
-	int end = begin + length;
+        int end = begin + length;
 
-	// Skip leading whitespace characters
+        // Skip leading whitespace characters
+        while (begin < end && Character.isWhitespace(ch[begin])) {
+          begin++;
+        }
 
-	while (begin < end && Character.isWhitespace(ch[begin])) {
-	  begin++;
-	}
+        // Skip trailing whitespace characters
+        while (begin < end && Character.isWhitespace(ch[end - 1])) {
+          end--;
+        }
 
-	// Skip trailing whitespace characters
-
-	while (begin < end && Character.isWhitespace(ch[end - 1])) {
-	  end--;
-	}
-
-	// Get the value
-
-	proxy_value = new String(ch, begin, end - begin);
-	state = STATE_VALUE_GOT;
+        // Get the value
+        proxy_value = new String(ch, begin, end - begin);
+        state = STATE_VALUE_GOT;
 
       } else {
-	handler.throw_characters_unexpected(xer_tag);
+        handler.throw_characters_unexpected(xer_tag);
       }
     }
 
   } // inner class XER_Parser_Proxy
-
 
 } // ASN1OctetString
 
@@ -546,6 +491,6 @@ private byte[] octets;
   Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
   Imported sources
 
-  */
+ */
 //----------------------------------------------------------------
 //EOF
