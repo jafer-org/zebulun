@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1GeneralizedTime.java,v 1.2 1999/03/17 05:45:36 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -15,12 +15,12 @@ package asn1;
 /**
  * ASN.1 GeneralizedTime
  *
- * The <code>GeneralizedTime</code> type denotes a string corrsponding
+ * The <code>GeneralizedTime<code> type denotes a string corrsponding
  * to an ISO 8601 date string.
  * This type is a string type.
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/03/17 05:45:36 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -32,14 +32,11 @@ public final class ASN1GeneralizedTime extends ASN1VisibleString
    * This constant is the UNIVERSAL tag value for GeneralizedTime.
    */
 
-public static final int TAG = 0x18;
+public final static int TAG = 0x18;
 
   /**
    * Constructor for an GeneralizedTime object. It sets the tag to the
-   * default value of UNIVERSAL 24 (0x18). 
-   * 
-   * @param value time
-   * */
+   * default value of UNIVERSAL 24 (0x18). */
 
 public 
 ASN1GeneralizedTime(String value)
@@ -64,10 +61,11 @@ ASN1GeneralizedTime(BEREncoding ber, boolean check_tag)
 
     if (check_tag) {
       if (ber.tag_get() != TAG || 
-	  ber.tag_type_get() != BEREncoding.UNIVERSAL_TAG)
+	  ber.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
 	throw new ASN1EncodingException
 	  ("ASN.1 GeneralizedTime: bad BER: tag=" + ber.tag_get() + 
 	   " expected " + TAG + "\n");
+      }
     }
   }
 
@@ -91,7 +89,13 @@ ber_encode()
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1GeneralizedTime.java,v $
+  Revision 1.2  1999/03/17 05:45:36  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

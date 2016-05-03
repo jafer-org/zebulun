@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: BEREncoding.java,v 1.5 1999/04/07 01:23:47 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -11,8 +11,8 @@
 
 package asn1;
 
-
-import java.io.*;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Vector;
 
 //----------------------------------------------------------------
@@ -35,8 +35,8 @@ import java.util.Vector;
  * @see asn1.BERPrimitive
  * @see asn1.BERConstructed
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/04/07 01:23:47 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -48,31 +48,31 @@ public abstract class BEREncoding
    * the BER bit encoding. Universal tags are for types defined in
    * the ASN.1 standard.
    */
-public static final int UNIVERSAL_TAG = 0x00;
+public final static int UNIVERSAL_TAG = 0x00;
 
   /**
    * Constant for indicating APPLICATION tag type. The value matches
    * the BER bit encoding. APPLICATION tags are globally unique to an
    * application.
    */
-public static final int APPLICATION_TAG = 0x40;
+public final static int APPLICATION_TAG = 0x40;
 
   /**
    * Constant for indicating CONTEXT SPECIFIC tag type. The value matches
    * the BER bit encoding. CONTEXT SPECIFIC tags are used in applications,
    * but do not have to be globally unique.
    */
-public static final int CONTEXT_SPECIFIC_TAG = 0x80;
+public final static int CONTEXT_SPECIFIC_TAG = 0x80;
 
   /**
    * Constant for indicating PRIVATE tag type. The value matches
    * the BER bit encoding.
    */
-public static final int PRIVATE_TAG = 0xC0;
+public final static int PRIVATE_TAG = 0xC0;
 
   //----------------------------------------------------------------
 
-private static final int MAX_BER_SIZE = 65536*4;
+private final static int MAX_BER_SIZE = 65536;
 
   //----------------------------------------------------------------
   /**
@@ -98,14 +98,13 @@ output(OutputStream dest) throws java.io.IOException;
    * it off. If you want to just output it, it is more efficient to
    * use the output method.
    *
-   * @return byte array
-   * 
+   * @see	output
    */
 
 public byte[]
 encoding_get()
   {
-    byte result[] = new byte[i_total_length];
+    byte[] result = new byte[i_total_length];
     i_encoding_get(0, result);
     return result;
   }
@@ -113,8 +112,6 @@ encoding_get()
   //----------------------------------------------------------------
   /**
    * Method to examine the tag type of the BER encoded ASN.1 object.
-   * 
-   * @return tag type
    */
 
 public int
@@ -126,8 +123,6 @@ tag_type_get()
   //----------------------------------------------------------------
   /**
    * Method to examine the tag number of the BER encoded ASN.1 object.
-   * 
-   * @return tag number
    */
 
 public int
@@ -139,35 +134,11 @@ tag_get()
   //----------------------------------------------------------------
   /**
    * Returns the total number of bytes the encoding occupies.
-   * 
-   * @return total number of bytes
    */
 
-  public int total_length()   {    return i_total_length;  }
+  //private int total_length()   {    return i_total_length;  }
 
-
-  /**
-   * The public wrapping for doInput() method.
-   *
-   * @param	src - the InputStream to read the raw BER from.
-   * @return	Returns the next complete BEREncoding object read
-   *		in from the input stream. Returns null if the
-   *		end has been reached.
-   * @exception	ASN1Exception If data does not represent a BER encoding
-   * @exception	java.io.IOException On input I/O error
-   *
-   */
-
-public static BEREncoding input(InputStream src) throws ASN1Exception, java.io.IOException
-{
-	int numBytesRead[] = new int[1];
-	
-	numBytesRead[0] = 0;
-	
-	return doInput(src, numBytesRead);
-}
-
-
+  //----------------------------------------------------------------
   /**
    * Constructs a complete BER encoding object from octets read in from
    * an InputStream.
@@ -180,177 +151,165 @@ public static BEREncoding input(InputStream src) throws ASN1Exception, java.io.I
    * which is in the definite-length form).
    *
    * @param	src - the InputStream to read the raw BER from.
-   * @param numBytesRead - a counter for all read bytes.
-   * @return	Returns the next complete BEREncoding object read
+   * @returns	Returns the next complete BEREncoding object read
    *		in from the input stream. Returns null if the
    *		end has been reached.
    * @exception	ASN1Exception If data does not represent a BER encoding
    * @exception	java.io.IOException On input I/O error
    */
 
-protected static BEREncoding doInput(InputStream src, int numBytesRead[]) throws ASN1Exception, java.io.IOException
-{
-	// Read in the identifier octets
-	int octet = src.read(); // first octet
-	if (octet < 0)
-		return null; // end of source reached, return sentinel indicator
+public static BEREncoding
+input(InputStream src)
+       throws ASN1Exception, java.io.IOException
+  {
+    // Read in the identifier octets
 
-	numBytesRead[0]++; // icrements bytes read count
-		
-	int tag_type = (octet & 0xC0); // bits 8 and 7 indicate tag type
+    int octet = src.read(); // first octet
+    if (octet < 0) {
+      return null; // end of source reached, return sentinel indicator
+    }
 
-	boolean is_cons = false; // is constructed
-	if ((octet & 0x20) != 0) // bit 6 indicates primitive/constructed
-		is_cons = true;
+    int tag_type = (octet & 0xC0); // bits 8 and 7 indicate tag type
 
-	int tag = octet & 0x1F; // bits 5-1 is (possible) the tag number
-	if (tag == 0x1F)
-	{
-		// Multiple octet form of tag, need to examine following bytes
-		// Tag value in base-128, bytes have MSB set except for last byte
+    boolean is_cons = false; // is constructed
+    if ((octet & 0x20) != 0) { // bit 6 indicates primitive/constructed
+      is_cons = true;
+    }
 
-		tag = 0;
-		do
-		{
-			octet = src.read();
-			if (octet < 0)
-				throw new ASN1EncodingException("Unexpected end in BER encoding");
-				
-			numBytesRead[0]++; // icrements bytes read count
-				
-			tag <<= 7;
-			tag |= (octet & 0x7F);
-		} while ((octet & 0x80) != 0);
+    int tag = octet & 0x1F; // bits 5-1 is (possible) the tag number
+    if (tag == 0x1F) {
+      // Multiple octet form of tag, need to examine following bytes
+      // Tag value in base-128, bytes have MSB set except for last byte
+
+      tag = 0;
+      do {
+	octet = src.read();
+	if (octet < 0) {
+	  throw new ASN1EncodingException("Unexpected end in BER encoding");
 	}
 
-	// Read in length octets
+	tag <<= 7;
+	tag |= (octet & 0x7F);
+      } while ((octet & 0x80) != 0);
+    }
 
-	int length;
+    // Read in length octets
 
-	octet = src.read(); // first octet of length octets
-	if (octet < 0)
-		throw new ASN1EncodingException("Unexpected end in BER encoding");
+    int length;
 
-	numBytesRead[0]++; // icrements bytes read count
+    octet = src.read(); // first octet of length octets
+    if (octet < 0) {
+      throw new ASN1EncodingException("Unexpected end in BER encoding");
+    }
 
-	if ((octet & 0x80) != 0)
-	{
-		if ((octet & 0x7f) == 0)
-		{
-			// Indefinite length
-			length = -1;
-			if (!is_cons)
-				throw new ASN1EncodingException("BER encoding corrupted primitive");
-
-		}
-		else
-		{
-			// Long form of length, number of octets byte plus tag in base-256
-			if (4 < (octet & 0x7f)) // Can't handle huge numbers!
-				throw new ASN1EncodingException("BER encoding too long");
-
-			length = 0;
-
-			for (int num_bytes = (octet & 0x7f); 0 < num_bytes; num_bytes--)
-			{
-				octet = src.read();
-				if (octet < 0)
-					throw new ASN1EncodingException("Unexpected end in BER encoding");
-
-				numBytesRead[0]++; // icrements bytes read count
-
-				length <<= 8;
-				length |= (octet & 0xff);
-			}
-
-			if (length < 0 || MAX_BER_SIZE < length)
-				throw new ASN1EncodingException("BER encoding too long");
-		}
-	}
-	else
-	{
-		// Short form of length, tag in lower 7 bits
-		length = (octet & 0x7F);
+    if ((octet & 0x80) != 0) {
+      if ((octet & 0x7f) == 0) {
+	// Indefinite length
+	length = -1;
+	if (! is_cons) {
+	  throw new ASN1EncodingException("BER encoding corrupted primitive");
 	}
 
-	// Read in the content octets
+      } else {
+	// Long form of length, number of octets byte plus tag in base-256
 
-	if (!is_cons)
-	{
-		// Primitive
-    
-		// Indefinite length on a primitive BER
-		// Might be able to handle this, but not in current implementation.
-		if (length < 0)
-			throw new ASN1EncodingException("Indefinite length primitive BER");
+	if (4 < (octet & 0x7f)) { // Can't handle huge numbers!
+	  throw new ASN1EncodingException("BER encoding too long");
+	}
+
+	length = 0;
+
+	for (int num_bytes = (octet & 0x7f); 0 < num_bytes; num_bytes--) {
+	  octet = src.read();
+	  if (octet < 0) {
+	    throw new ASN1EncodingException("Unexpected end in BER encoding");
+	  }
+
+	  length <<= 8;
+	  length |= (octet & 0xff);
+	}
+
+	if (length < 0 || MAX_BER_SIZE < length) {
+	  throw new ASN1EncodingException("BER encoding too long");
+	}
+      }
+    } else {
+      // Short form of length, tag in lower 7 bits
+      length = (octet & 0x7F);
+    }
+
+    // Read in the content octets
+
+    if (! is_cons) {
+      // Primitive
       
-		int contents[] = new int[length];
+      // Indefinite length on a primitive BER
+      // Might be able to handle this, but not in current implementation.
+      if (length < 0) {
+	throw new ASN1EncodingException("Indefinite length primitive BER");
+      }
 
-		for (int x = 0; x < length; x++)
-		{
-			octet = src.read();
-			if (octet < 0)
-				throw new ASN1EncodingException("Unexpected end in BER encoding");
+      int[] contents = new int[length];
 
-			numBytesRead[0]++; // icrements bytes read count
-
-			contents[x] = octet;
-		}
-		return new BERPrimitive(tag_type, tag, contents);
+      for (int x = 0; x < length; x++) {
+	octet = src.read();
+	if (octet < 0) {
+	  throw new ASN1EncodingException("Unexpected end in BER encoding");
 	}
-	else
-	{
-		// Constructed
 
-		Vector chunks = new Vector(8, 8); // dynamic storage for parts
-		int total_read = 0;
+	contents[x] = octet;
+      }
+      return new BERPrimitive(tag_type, tag, contents);
 
-		
-		if (0 <= length)
-		{
-			// Definite length, get all encoded components
-			while (total_read < length)
-			{
-				int current_read = numBytesRead[0]; // num bytes read until now
-				BEREncoding chunk = BEREncoding.doInput(src, numBytesRead); // recursive call
-				if (chunk == null)
-					throw new ASN1EncodingException("Unexpected end in BER encoding");
+    } else {
+      // Constructed
+      
+      Vector chunks = new Vector(8, 8); // dynamic storage for parts
+      int total_read = 0;
 
-				chunks.addElement(chunk);
-				//total_read += chunk.i_total_length; // BUG
-				total_read += numBytesRead[0] - current_read; // adds chunk number bytes read
-			}
-		}
-		else
-		{
-		
-			// Indefinite length, need to keep reading until end-of-contents octets
-			while (true)
-			{
-				BEREncoding chunk = BEREncoding.doInput(src, numBytesRead); // recursive call
-				if (chunk == null)
-					throw new ASN1EncodingException("Unexpected end in BER encoding");
-				
-				
-				if (chunk.i_tag == 0 && chunk.i_tag_type == BEREncoding.UNIVERSAL_TAG && chunk.i_total_length == 2)
-					break; // end-of-contents marker reached, stop reading
-	  		else
-					chunks.addElement(chunk); // add to chunks
-			}
-		}
-				
+      if (0 <= length) {
+	// Definite length, get all encoded components
 
-		// Take the vector of chunks and put them in an array of BEREncoding
+	while (total_read < length) {
+	  BEREncoding chunk = BEREncoding.input(src); // recursive call
+	  if (chunk == null) {
+	    throw new ASN1EncodingException("Unexpected end in BER encoding");
+	  }
 
-		int num_elements = chunks.size();
-		BEREncoding parts[] = new BEREncoding[num_elements];
-		for (int x = 0; x < num_elements; x++)
-			parts[x] = ((BEREncoding) chunks.elementAt(x));
-
-		return new BERConstructed(tag_type, tag, parts);
+	  chunks.addElement(chunk);
+	  total_read += chunk.i_total_length;
 	}
-}
 
+      } else {
+	// Indefinite length, need to keep reading until end-of-contents octets
+
+	while (true) {
+	  BEREncoding chunk = BEREncoding.input(src); // recursive call
+	  if (chunk == null) {
+	    throw new ASN1EncodingException("Unexpected end in BER encoding");
+	  }
+
+	  if (chunk.i_tag == 0 &&
+	      chunk.i_tag_type == BEREncoding.UNIVERSAL_TAG &&
+	      chunk.i_total_length == 2) {
+	    break; // end-of-contents marker reached, stop reading
+	  } else {
+	    chunks.addElement(chunk); // add to chunks
+	  }
+	}
+      }
+
+      // Take the vector of chunks and put them in an array of BEREncoding
+
+      int num_elements = chunks.size();
+      BEREncoding[] parts = new BEREncoding[num_elements];
+      for (int x = 0; x < num_elements; x++) {
+	parts[x] = ((BEREncoding) chunks.elementAt(x));
+      }
+
+      return new BERConstructed(tag_type, tag, parts);
+    }
+  }
 
   //================================================================
 
@@ -388,11 +347,12 @@ init(int tag_type, boolean is_constructed, int tag, int length)
    */
 
 protected void
-output_bytes(int data[], OutputStream dest)
+output_bytes(int[] data, OutputStream dest)
        throws java.io.IOException
   {
-    for (int index = 0; index < data.length; index++)
+    for (int index = 0; index < data.length; index++) {
       dest.write(data[index]);
+    }
   }
 
   //----------------------------------------------------------------
@@ -418,15 +378,19 @@ output_head(OutputStream dest) throws java.io.IOException
    */
 
 protected int
-i_get_head(int offset, byte data[])
+i_get_head(int offset, byte[] data)
   {
-    for (int n = 0; n < identifierEncoding.length; n++)
-      data[offset++] = (byte) identifierEncoding[n];
+    int result = offset;
 
-    for (int n = 0; n < lengthEncoding.length; n++)
-      data[offset++] = (byte) lengthEncoding[n];
+    for (int n = 0; n < identifierEncoding.length; n++) {
+      data[result++] = (byte) identifierEncoding[n];
+    }
 
-    return offset;
+    for (int n = 0; n < lengthEncoding.length; n++) {
+      data[result++] = (byte) lengthEncoding[n];
+    }
+
+    return result;
   }
 
   //----------------------------------------------------------------
@@ -438,7 +402,7 @@ i_get_head(int offset, byte data[])
    */
 
 protected abstract int
-i_encoding_get(int offset, byte data[]);
+i_encoding_get(int offset, byte[] data);
 
   //----------------------------------------------------------------
   /**
@@ -466,10 +430,12 @@ make_identifier(int tag_type, boolean is_constructed, int tag)
   {
     int b;
 
-    if ((tag_type & ~0x00C0) != 0)
+    if ((tag_type & ~0x00C0) != 0) {
       throw new ASN1Exception("Invalid ASN.1 tag type");
-    if (tag < 0)
+    }
+    if (tag < 0) {
       throw new ASN1Exception("ASN.1 tag value is negative");
+    }
 
     // bits 8 and 7 specify the tag type
     i_tag_type = (tag_type & 0xC0);
@@ -508,8 +474,9 @@ make_identifier(int tag_type, boolean is_constructed, int tag)
       int index = 0;
       for (int digit = number_bytes - 2; 0 <= digit; digit--) {
 	identifierEncoding[++index] = (tag >> (digit * 7)) & 0x7f;
-	if (digit != 0)
+	if (digit != 0) {
 	  identifierEncoding[index] |= 0x80; // bit-8 set in last byte
+	}
       }
     }
   }
@@ -524,32 +491,28 @@ make_identifier(int tag_type, boolean is_constructed, int tag)
    *		value indicates an "indefinite length".
    */
 
-	private void make_length(int length) // Generates a BER encoded stream representing the length.
+private void
+make_length(int length)
+       // Generates a BER encoded stream representing the length.
   {
-    if (length < 0)
-    {
+    if (length < 0) {
       lengthEncoding = new int[1];
       lengthEncoding[0] = 0x80; // indefinite length
 
-    }
-    else if (length < 128)
-    {
+    } else if (length < 128) {
       // Short form: one octet
 
       lengthEncoding = new int[1];
       lengthEncoding[0] = length;
 
-    }
-    else
-    {
+    } else {
       // Long form : two to 127 octets
 
       int count = 0;
       int shifted = length;
-      while (shifted != 0)
-      {
-				count++;
-				shifted >>= 8;
+      while (shifted != 0) {
+	count++;
+	shifted >>= 8;
       }
 
       lengthEncoding = new int[count + 1];
@@ -557,15 +520,43 @@ make_identifier(int tag_type, boolean is_constructed, int tag)
 
       // remaining octets: length in base 256 (most significant digit first)
       int index = 0;
-      while (0 < count)
-      {
-				count--;
-				int digit = (length >> (count * 8)) & 0xff;
-				lengthEncoding[++index] = digit;
+      while (0 < count) {
+	count--;
+	int digit = (length >> (count * 8)) & 0xff;
+	lengthEncoding[++index] = digit;
       }
     }
   }
 
+  //----------------------------------------------------------------
+
+  public final static char[] hex = {
+    '0', '1', '2', '3', '4', '5', '6', '7',
+    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+  };
+
+  public void
+    xer_encode(java.io.PrintWriter dest)
+    throws ASN1Exception
+  {
+    String title = "xer:BER";
+
+    byte[] ber_encoding = this.encoding_get();
+
+    dest.print("<" + title + ">");
+    dest.print("<xer:Hex>");
+
+    for (int x = 0; x < ber_encoding.length; x++) {
+      byte octet = ber_encoding[x];
+
+      dest.print(hex[((octet >> 4) & 0x0f)]);
+      dest.print(hex[(octet & 0x0f)]);
+    }
+
+    dest.print("</xer:Hex>");
+    dest.print("</" + title + ">");
+  }
+  
   //----------------------------------------------------------------
   /**
    * Storage for the identifier octets. This variable is set up by
@@ -573,7 +564,7 @@ make_identifier(int tag_type, boolean is_constructed, int tag)
    * The octets are internally stored as int[] for efficiency over byte[].
    */
 
-private int identifierEncoding[];
+private int[] identifierEncoding;
 
   //----------------------------------------------------------------
   /**
@@ -604,7 +595,7 @@ protected int i_tag;
    * The octets are internally stored as int[] for efficiency over byte[].
    */
 
-private int lengthEncoding[];
+private int[] lengthEncoding;
 
   //----------------------------------------------------------------
   /**
@@ -622,7 +613,22 @@ protected int i_total_length;
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: BEREncoding.java,v $
+  Revision 1.5  1999/04/07 01:23:47  hoylen
+  Fixed XER encoding of ANY to be a single BER rather than as individual parts
+
+  Revision 1.4  1999/03/17 05:45:40  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.3  1999/03/15 07:35:02  hoylen
+  Implemented experimental XER encoding and decoding
+
+  Revision 1.2  1998/12/29 02:24:59  hoylen
+  Fixed new directory structure
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

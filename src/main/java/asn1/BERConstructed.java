@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: BERConstructed.java,v 1.6 1999/04/07 01:23:47 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -11,7 +11,7 @@
 
 package asn1;
 
-import java.io.*;
+import java.io.OutputStream;
 
 //----------------------------------------------------------------
 /**
@@ -28,8 +28,8 @@ import java.io.*;
  *
  * @see asn1.BEREncoding
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/04/07 01:23:47 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -51,7 +51,7 @@ public class BERConstructed extends BEREncoding
    */
 
   public 
-  BERConstructed(int asn1_class, int tag, BEREncoding elements[])
+  BERConstructed(int asn1_class, int tag, BEREncoding[] elements)
        throws ASN1Exception
   {
     int content_length = 0;
@@ -81,16 +81,15 @@ output(OutputStream dest)
   {
     output_head(dest);
 
-    for (int index = 0; index < content_elements.length; index++)
+    for (int index = 0; index < content_elements.length; index++) {
       content_elements[index].output(dest);
+    }
   }
 
   //----------------------------------------------------------------
   /**
    * This method returns the number of BER encoded elements that this
    * object is made up of to be returned.
-   * 
-   * @return number of BER encoded elements
    */
 
 public int
@@ -104,8 +103,6 @@ number_components()
    * This method allows the elements of the BER encoding to be examined.
    * @param	index - the index of the BER object required,
    *            it must be in the range, [0, number_components() - 1]
-   *            
-   * @return BER Encoding
    */
 
 public BEREncoding
@@ -140,8 +137,9 @@ toString()
     str.append(String.valueOf(i_tag) + "]{");
 
     for (int x = 0; x < content_elements.length; x++) {
-      if (x != 0)
+      if (x != 0) {
         str.append(',');
+      }
 
       str.append(content_elements[x].toString());
     }
@@ -157,14 +155,15 @@ toString()
    */
 
 protected int
-i_encoding_get(int offset, byte data[])
+i_encoding_get(int offset, byte[] data)
   {
-    offset = i_get_head(offset, data);
+    int result = i_get_head(offset, data);
 
-    for (int index = 0; index < content_elements.length; index++)
-      offset = content_elements[index].i_encoding_get(offset, data);
+    for (int index = 0; index < content_elements.length; index++) {
+      result = content_elements[index].i_encoding_get(result, data);
+    }
 
-    return offset;
+    return result;
   }
 
   //----------------------------------------------------------------
@@ -173,12 +172,74 @@ i_encoding_get(int offset, byte data[])
    * up this constucted BER encoding (in order).
    */
 
-  private BEREncoding content_elements[];
+  private BEREncoding[] content_elements;
+
+//  //================================================================
+//  /**
+//   * Produces the XER encoding equivalent of this BER encoding. 
+//   *
+//   * @param	dest the destination XER encoding is written to
+//   * @exception ASN1Exception if data is invalid.
+//   */
+//
+//  public void
+//    ZZZxer_encode(java.io.PrintWriter dest)
+//    throws ASN1Exception
+//  {
+//    String title = "xer:BER";
+//
+//    dest.print("<" + title + " ");
+//
+//    switch (i_tag_type) {
+//    case BEREncoding.UNIVERSAL_TAG:
+//	dest.print("UNIVERSAL=");
+//	break;
+//    case BEREncoding.APPLICATION_TAG:
+//	dest.print("APPLICATION=");
+//	break;
+//    case BEREncoding.CONTEXT_SPECIFIC_TAG:
+//	dest.print("CONTEXTSPECIFIC=");
+//	break;
+//    case BEREncoding.PRIVATE_TAG:
+//	dest.print("PRIVATE=");
+//	break;
+//    }
+//    dest.print('"');
+//    dest.print(String.valueOf(i_tag));
+//    dest.print('"');
+//
+//    dest.print(">");
+//
+//    for (int x = 0; x < content_elements.length; x++) {
+//	content_elements[x].xer_encode(dest);
+//    }
+//    
+//    dest.print("</" + title + ">");
+//  }
+
 }
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: BERConstructed.java,v $
+  Revision 1.6  1999/04/07 01:23:47  hoylen
+  Fixed XER encoding of ANY to be a single BER rather than as individual parts
+
+  Revision 1.5  1999/03/17 05:45:40  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.4  1999/03/17 00:32:18  hoylen
+  Added ZSQL RS
+
+  Revision 1.3  1999/03/15 07:35:01  hoylen
+  Implemented experimental XER encoding and decoding
+
+  Revision 1.2  1998/12/29 02:24:59  hoylen
+  Fixed new directory structure
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

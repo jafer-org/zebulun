@@ -1,19 +1,17 @@
-The OID of CIPSpecififcInfo is:  
-z3950 2 1000 99 1
-
-
-The OID of CIP Order is:
-z3950 9 1000 99 1
-
+-- The OID of CIPSpecificInfo is:  
+-- z3950 2 1000 99 1
 
 CIP-Release-B-APDU {Z39.50-CIP-B-APDU 1} DEFINITIONS ::=
 BEGIN
-IMPORTS IntUnit, InternationalString, Unit FROM Z39.50-APDU-1995;
+-- Added import of "Unit" (Hoylen Sue 1998-04-22)
+-- Original line was:
+-- IMPORTS IntUnit, InternationalString FROM Z39.50-APDU-1995;
+IMPORTS Unit, IntUnit, InternationalString FROM Z39-50-APDU-1995;
 
 CIPSpecificInfo	::=		CHOICE
 {
 searchControl		[1]	IMPLICIT		SearchControl,
-term		[2]	EXPLICIT	CIPTerm,
+term		[2]	IMPLICIT	CIPTerm,
 explainInfo		[3]	IMPLICIT	AdditionalSemanticAttributes
 }
 
@@ -23,7 +21,7 @@ itemDescriptorType	[1]	IMPLICIT INTEGER
 				{
 				collectionDescriptorSearch	(1),
 				productDescriptorSearch	(3)
-				}
+				},
 searchScope		[2]	IMPLICIT INTEGER
 				{
 				localSearch			(1),
@@ -69,7 +67,14 @@ AdditionalSemanticAttributes	 ::=  SEQUENCE
 {
 shortMeaning		[1]	IMPLICIT	InternationalString		OPTIONAL,
 -- Short description of the attribute/element.
+
+
+-- Changed "Units" to "Unit" since "Units" is undefined (Hoylen Sue 1998-04-22)
+-- Original line was:
+-- unit		[2]	IMPLICIT	Units				OPTIONAL,
 unit		[2]	IMPLICIT	Unit				OPTIONAL,
+
+
 -- Unit associated with the attribute/element.
 specificInstance	[3]	IMPLICIT	InternationalString		OPTIONAL,
 -- specificInstance provides textual meanings for specific values of 
@@ -85,13 +90,19 @@ valueSyntax		[6]	IMPLICIT	InternationalString
 
 END
 
+-- The OID of CIP Order is:
+-- z3950 9 1000 99 1
 
+-- Added a module name "CIP-Order-ES" so parser can identify it (Hoylen Sue 1998-04-22)
+-- Original line:
+-- {Z39.50-CIP-Order-ES} DEFINITIONS ::=
 
-
-
-{Z39.50-CIP-Order-ES} DEFINITIONS ::=
+CIP-Order-ES {Z39.50-CIP-Order-ES} DEFINITIONS ::=
 BEGIN
-IMPORTS OtherInformation, IntUnit, InternationalString FROM Z39.50-APDU-1995;
+-- Added import of IntUnit name and fixed name (Hoylen Sue 1998-04-22)
+-- Original line:
+-- IMPORTS OtherInformation, InternationalString FROM Z39.50-APDU-1995;
+IMPORTS IntUnit, OtherInformation, InternationalString FROM Z39-50-APDU-1995;
 
 CIPOrder	::=		CHOICE
 {
@@ -207,7 +218,7 @@ PaymentMethod	::=		CHOICE
 	creditCard			[3]	IMPLICIT CreditCardInfo,
 	cardInfoPreviouslySupplied	[4] IMPLICIT NULL,
 	privateKnown			[5]	IMPLICIT NULL,
-	privateNotKnown			[6]	IMPLICIT EXTERNAL},
+	privateNotKnown			[6]	IMPLICIT EXTERNAL
 	}
 
 CreditCardInfo	::=		SEQUENCE
@@ -251,6 +262,10 @@ AdHocPackage	::=		SEQUENCE OF OrderItem
 
 OrderItem	::=		SEQUENCE
 {
+-- Changed "ItemDescriptorId" to "InternationalString" (Hoylen Sue 1998-04-22)
+-- since that production is undefined.
+-- Original line was:
+-- productId			[1]	ItemDescriptorId,
 productId			[1]	InternationalString,
 productPrice			[2]	PriceInfo			OPTIONAL,
 productDeliveryOptions		[3]	ProductDeliveryOptions	OPTIONAL,
@@ -302,7 +317,3 @@ orderBeingDeleted				(8)
 }
 
 END
-
-
-
-

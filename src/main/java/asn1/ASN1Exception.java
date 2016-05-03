@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1Exception.java,v 1.1.1.1 1998/12/29 00:19:40 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -15,8 +15,8 @@ package asn1;
 /**
  * ASN1Exception
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1998/12/29 00:19:40 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -36,7 +36,10 @@ public class ASN1Exception extends Exception
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1Exception.java,v $
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

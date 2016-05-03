@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1Set.java,v 1.2 1999/03/17 05:45:39 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -29,8 +29,8 @@ package asn1;
  * For DER encoding, DEFAULTs are not included and all the elements
  * are sorted according to tag number.
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/03/17 05:45:39 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -42,7 +42,7 @@ public final class ASN1Set extends ASN1Any
    * a SET or a SET OF type.
    */
 
-public static final int TAG = 0x11;
+public final static int TAG = 0x11;
 
   //----------------------------------------------------------------
   /**
@@ -53,7 +53,7 @@ public static final int TAG = 0x11;
    */
 
 public 
-ASN1Set(ASN1Any element_array[])
+ASN1Set(ASN1Any[] element_array)
   {
     elements = element_array;
   }
@@ -89,14 +89,16 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
   {
     if (check_tag) {
       if (ber_enc.tag_get() != TAG || 
-	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG)
+	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
 	throw new ASN1EncodingException
 	  ("ASN.1 SET: bad BER: tag=" + ber_enc.tag_get() +
 	   " expected " + TAG + "\n");
+      }
     }
 
-    if (ber_enc instanceof BERPrimitive)
+    if (ber_enc instanceof BERPrimitive) {
       throw new ASN1EncodingException("ASN.1 SET: bad form, primitive");
+    }
 
     BERConstructed ber = (BERConstructed) ber_enc;
 
@@ -104,8 +106,9 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
     
     elements = new ASN1Any[len];
 
-    for (int x = 0; x < len; x++)
+    for (int x = 0; x < len; x++) {
       elements[x] = ASN1Decoder.toASN1(ber.elementAt(x));
+    }
   }
    
   //----------------------------------------------------------------
@@ -138,10 +141,11 @@ ber_encode(int tag_type, int tag)
        throws ASN1Exception
   {
     int len = elements.length;
-    BEREncoding encodings[] = new BEREncoding[len];
+    BEREncoding[] encodings = new BEREncoding[len];
     
-    for (int index = 0; index < len; index++)
+    for (int index = 0; index < len; index++) {
       encodings[index] = elements[index].ber_encode();
+    }
       
     return new BERConstructed(tag_type, tag, encodings);
   }
@@ -154,7 +158,7 @@ ber_encode(int tag_type, int tag)
    */
 
 public void
-set(ASN1Any element_array[])
+set(ASN1Any[] element_array)
   {
     elements = element_array;
   }
@@ -183,8 +187,9 @@ toString()
     StringBuffer str = new StringBuffer("{");
 
     for (int index = 0; index < elements.length; index++) {
-      if (index != 0)
+      if (index != 0) {
 	str.append(", ");
+      }
 
       str.append(elements[index].toString());
     }
@@ -199,13 +204,19 @@ toString()
    * The values of the SET are stored in this array.
    */
 
-private ASN1Any elements[];
+private ASN1Any[] elements;
 
 } // ASN1Set
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1Set.java,v $
+  Revision 1.2  1999/03/17 05:45:39  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

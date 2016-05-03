@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1Integer.java,v 1.5 1999/04/13 07:23:06 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -23,8 +23,8 @@ package asn1;
  * The current implementation limits the values of INTEGERs to 32-bit
  * two's complement values.
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/04/13 07:23:06 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -35,7 +35,29 @@ public final class ASN1Integer extends ASN1Any
    * This constant is the ASN.1 UNIVERSAL tag value for INTEGER.
    */
 
-public static final int TAG = 0x02;
+public final static int TAG = 0x02;
+
+  //----------------------------------------------------------------
+  /**
+   * The value of the INTEGER is stored in this variable. 
+   * This is private for good information hiding, so that we are able
+   * to change its representation (e.g. to a long) at a later date
+   * without affecting the interface.
+   */
+
+private int value;
+
+  //================================================================
+  /**
+   * Constructor for an ASN.1 INTEGER object. The tag is
+   * set to the default tag of UNIVERSAL 2, and the value to zero.
+   */
+
+public 
+ASN1Integer()
+  {
+    value = 0;
+  }
 
   //----------------------------------------------------------------
   /**
@@ -83,26 +105,31 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
   {
     if (check_tag) {
       if (ber_enc.tag_get() != TAG || 
-	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG)
+	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
 	throw new ASN1EncodingException
 	  ("ASN.1 INTEGER: bad BER: tag=" + ber_enc.tag_get() + 
 	   " expected " + TAG + "\n");
+      }
     }
 
-    if (! (ber_enc instanceof BERPrimitive))
+    if (! (ber_enc instanceof BERPrimitive)) {
       throw new ASN1EncodingException("ASN.1 INTEGER: bad form, constructed");
+    }
 
     BERPrimitive ber = (BERPrimitive) ber_enc;
 
-    int encoding[] = ber.peek();
+    int[] encoding = ber.peek();
   
-    if (encoding.length < 1)
+    if (encoding.length < 1) {
       throw new ASN1EncodingException
 	("ASN.1 INTEGER: invalid encoding, length = " + encoding.length);
+    }
 
     value = (byte) encoding[0]; // to ensure sign extension
 
     for (int x = 1; x < encoding.length; x++) {
+      // may need overflow check here ???
+
       value <<= 8;
       value |= (encoding[x] & 0xff);
     }
@@ -143,8 +170,9 @@ ber_encode(int tag_type, int tag)
     int length = 0;
 
     int shifted = value;
-    if (value < 0)
+    if (value < 0) {
       shifted = ~value;
+    }
 
     boolean need_pad; // when MSB confuses sign (causes 1st 0x00 or 0xFF digit)
 
@@ -155,12 +183,13 @@ ber_encode(int tag_type, int tag)
       length++;
     } while (shifted != 0);
 
-    if (need_pad)
+    if (need_pad) {
       length++;
+    }
 
     // Generate BER encoding of the integer (base 256 encoding)
 
-    int encoding[] = new int [length];
+    int[] encoding = new int [length];
 
     int index = 0;
     while (0 < length) {
@@ -179,8 +208,8 @@ ber_encode(int tag_type, int tag)
    * @return	the object.
    */
 
-public ASN1Integer
-set(int new_val)
+  public ASN1Integer
+    set(int new_val)
   {
     value = new_val;
     return this;
@@ -211,20 +240,160 @@ toString()
   }
 
   //================================================================
+  // XER (XML Encoding Rules) code
+
+  //----------------------------------------------------------------
   /**
-   * The value of the INTEGER is stored in this variable. 
-   * This is private for good information hiding, so that we are able
-   * to change its representation (e.g. to a long) at a later date
-   * without affecting the interface.
+   * Produces the XER encoding of the object.
+   *
+   * @param	dest the destination XER encoding is written to
+   * @exception ASN1Exception if data is invalid.
    */
+ 
+  public void
+    xer_encode(java.io.PrintWriter dest)
+    throws ASN1Exception
+  {
+    dest.print(String.valueOf(value));
+  }
 
-private int value;
+  //================================================================
+  // Nested inner-class for parsing XER.
 
+  public static class XER_Parser_Proxy extends XERsaxHandler.XER_Parser_Proxy {
+
+    private final static int STATE_INIT = 0;
+    private final static int STATE_START_GOT = 1;
+    private final static int STATE_VALUE_GOT = 2;
+    private final static int STATE_TERM = 3;
+
+    private int state;
+
+    private int proxy_value;
+
+    //----------------
+
+    public XER_Parser_Proxy()
+    {
+      super("INTEGER");
+      state = STATE_INIT;
+    }
+
+    public XER_Parser_Proxy(String overriding_xer_tag)
+    {
+      super(overriding_xer_tag);
+      state = STATE_INIT;
+    }
+
+    //----------------
+
+    public void startElement(XERsaxHandler handler,
+			     String name,
+			     org.xml.sax.AttributeList atts)
+      throws org.xml.sax.SAXException
+    {
+      if (name.equals(xer_tag) &&
+	  state == STATE_INIT) {
+	state = STATE_START_GOT;
+
+      } else {
+	handler.throw_start_unexpected(xer_tag, name);
+      }
+    }
+
+    //----------------
+
+    public void endElement(XERsaxHandler handler,
+			   String name)
+      throws org.xml.sax.SAXException
+    {
+      if (name.equals(xer_tag) &&
+	  state == STATE_VALUE_GOT) {
+	// Create new INTEGER object
+	handler.member_got(new ASN1Integer(proxy_value));
+	state = STATE_TERM;
+
+      } else {
+	handler.throw_end_unexpected(xer_tag, name);
+      }
+    }
+  
+    //----------------
+
+    public void characters(XERsaxHandler handler,
+			   char[] ch,
+			   int start,
+			   int length)
+      throws org.xml.sax.SAXException
+    {
+      int begin = start;
+
+      if (state == STATE_START_GOT) {
+	int end = begin + length;
+      
+	while (begin < end && Character.isWhitespace(ch[begin])) {
+	  begin++;
+	}
+
+	if (begin < end) {
+	  // Found some non-whitespace characters
+
+	  int nws_end = begin + 1;
+	  while (nws_end < end && ! Character.isWhitespace(ch[nws_end])) {
+	    nws_end++;
+	  }
+
+	  String str = new String(ch, begin, nws_end - begin);
+	  try {
+	    proxy_value = java.lang.Integer.parseInt(str);
+	  }
+	  catch (java.lang.NumberFormatException ex) {
+	    handler.throw_characters_unexpected(xer_tag);
+	  }
+
+	  // Check that remaining characters are all whitespace
+
+	  while (nws_end < end) {
+	    if (! Character.isWhitespace(ch[nws_end])) {
+	      handler.throw_characters_unexpected(xer_tag);
+	    }
+
+	    nws_end++;
+	  }
+
+	  state = STATE_VALUE_GOT;
+
+	} else {
+	  // All whitespace: ignore
+	}
+       
+      } else {
+	handler.throw_characters_unexpected(xer_tag);
+      }
+    }
+    
+  } // inner class XER_Parser_Proxy
+  
 } // ASN1Integer
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1Integer.java,v $
+  Revision 1.5  1999/04/13 07:23:06  hoylen
+  Updated encoding code to latest XER encoding rules
+
+  Revision 1.4  1999/03/17 05:45:37  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.3  1999/03/17 00:32:16  hoylen
+  Added ZSQL RS
+
+  Revision 1.2  1999/03/15 07:34:59  hoylen
+  Implemented experimental XER encoding and decoding
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

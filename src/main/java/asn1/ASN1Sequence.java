@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1Sequence.java,v 1.4 1999/04/13 07:23:08 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -25,8 +25,8 @@ package asn1;
  * definitions. However, specialised ASN.1 productions will usually
  * use their own encoding for SEQUENCES directly.
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/04/13 07:23:08 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -38,10 +38,16 @@ public final class ASN1Sequence extends ASN1Any
    * a SEQUENCE or a SEQUENCE OF type.
    */
 
-public static final int TAG = 0x10;
+public final static int TAG = 0x10;
 
   //----------------------------------------------------------------
+  /**
+   * The values of the SEQUENCE are stored in this array.
+   */
 
+private ASN1Any[] elements;
+
+  //================================================================
   /**
    * Default constructor for an ASN.1 SEQUENCE object. The tag is set
    * to the default value.
@@ -50,7 +56,7 @@ public static final int TAG = 0x10;
    */
 
 public 
-ASN1Sequence(ASN1Any element_array[])
+ASN1Sequence(ASN1Any[] element_array)
   {
     elements = element_array;
   }
@@ -86,14 +92,16 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
   {
     if (check_tag) {
       if (ber_enc.tag_get() != TAG || 
-	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG)
+	  ber_enc.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
 	throw new ASN1EncodingException
 	  ("ASN.1 SEQUENCE: bad BER: tag=" + ber_enc.tag_get() + 
 	   " expected " + TAG + "\n");
+      }
     }
 
-    if (ber_enc instanceof BERPrimitive)
+    if (ber_enc instanceof BERPrimitive) {
       throw new ASN1EncodingException("ASN.1 SEQUENCE: bad form, primitive");
+    }
 
     BERConstructed ber = (BERConstructed) ber_enc;
 
@@ -101,8 +109,9 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
     
     elements = new ASN1Any[len];
 
-    for (int x = 0; x < len; x++)
+    for (int x = 0; x < len; x++) {
       elements[x] = ASN1Decoder.toASN1(ber.elementAt(x));
+    }
   }
 
   //----------------------------------------------------------------
@@ -136,10 +145,11 @@ ber_encode(int tag_type, int tag)
        throws ASN1Exception
   {
     int len = elements.length;
-    BEREncoding encodings[] = new BEREncoding[len];
+    BEREncoding[] encodings = new BEREncoding[len];
 
-    for (int index = 0; index < len; index++)
+    for (int index = 0; index < len; index++) {
       encodings[index] = elements[index].ber_encode();
+    }
       
     return new BERConstructed(tag_type, tag, encodings);
   }
@@ -149,11 +159,10 @@ ber_encode(int tag_type, int tag)
    * Method to set the SEQUENCE's elements.
    *
    * @param element_array  an array of ASN.1 object.
-   * @return SEQUENCE
    */
 
 public ASN1Sequence
-set(ASN1Any element_array[])
+set(ASN1Any[] element_array)
   {
     elements = element_array;
     return this;
@@ -183,8 +192,9 @@ toString()
     StringBuffer str = new StringBuffer("{");
 
     for (int index = 0; index < elements.length; index++) {
-      if (index != 0)
+      if (index != 0) {
 	str.append(", ");
+      }
 
       str.append(elements[index].toString());
     }
@@ -195,17 +205,42 @@ toString()
   }
 
   //================================================================
+  // XER (XML Encoding Rules) code
+
+  //----------------------------------------------------------------
   /**
-   * The values of the SEQUENCE are stored in this array.
+   * Produces the XER encoding of the object.
+   *
+   * @param	dest the destination XER encoding is written to
+   * @exception ASN1Exception if data is invalid.
    */
 
-private ASN1Any elements[];
+  public void
+    xer_encode(java.io.PrintWriter dest)
+    throws ASN1Exception
+  {
+    for (int index = 0; index < elements.length; index++) {
+      elements[index].xer_encode(dest);
+    }
+  }
 
 } // ASN1Sequence
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1Sequence.java,v $
+  Revision 1.4  1999/04/13 07:23:08  hoylen
+  Updated encoding code to latest XER encoding rules
+
+  Revision 1.3  1999/04/06 07:07:43  hoylen
+  Added XML encoding (not decoding) routine.
+
+  Revision 1.2  1999/03/17 05:45:38  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

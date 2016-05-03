@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: BERPrimitive.java,v 1.6 1999/04/07 01:23:47 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -11,7 +11,7 @@
 
 package asn1;
 
-import java.io.*;
+import java.io.OutputStream;
 
 //----------------------------------------------------------------
 /**
@@ -28,8 +28,8 @@ import java.io.*;
  *
  * @see asn1.BEREncoding
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/04/07 01:23:47 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -50,12 +50,12 @@ public class BERPrimitive extends BEREncoding
    * @see asn1.BEREncoding#PRIVATE_TAG
    */
 
-BERPrimitive(int asn1_class, int tag, int contents[])
+BERPrimitive(int asn1_class, int tag, int[] contents)
        throws ASN1Exception
   {
     init(asn1_class, /* constructed */ false, tag, contents.length);
     contents_octets = contents;
-  };
+  }
 
   //----------------------------------------------------------------
   /**
@@ -118,7 +118,7 @@ toString()
       // Dump each octet in hex
 
       int octet = contents_octets[x];
-      char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+      char[] hex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		     'a', 'b', 'c', 'd', 'e', 'f' };
 
       str.append(hex[((octet >> 4) & 0x0f)]);
@@ -136,14 +136,15 @@ toString()
    */
 
 protected int
-i_encoding_get(int offset, byte data[])
+i_encoding_get(int offset, byte[] data)
   {
-    offset = i_get_head(offset, data);
+    int result = i_get_head(offset, data);
 
-    for (int n = 0; n < contents_octets.length; n++)
-      data[offset++] = (byte) contents_octets[n];
+    for (int n = 0; n < contents_octets.length; n++) {
+      data[result++] = (byte) contents_octets[n];
+    }
 
-    return offset;
+    return result;
   }
 
   //----------------------------------------------------------------
@@ -152,13 +153,81 @@ i_encoding_get(int offset, byte data[])
    * They are internally stored as int[] for efficiency over byte[].
    */
 
-private int contents_octets[];
+private int[] contents_octets;
   
+//  //================================================================
+//  /**
+//   * Produces the XER encoding equivalent of this BER encoding. 
+//   *
+//   * @param	dest the destination XER encoding is written to
+//   * @exception ASN1Exception if data is invalid.
+//   */
+//
+//public void
+//ZZZxer_encode(java.io.PrintWriter dest)
+//  throws ASN1Exception
+//  {
+//    String title = "xer:BER";
+//
+//    dest.print("<" + title + " ");
+//
+//    switch (i_tag_type) {
+//    case BEREncoding.UNIVERSAL_TAG:
+//	dest.print("UNIVERSAL=");
+//	break;
+//    case BEREncoding.APPLICATION_TAG:
+//	dest.print("APPLICATION=");
+//	break;
+//    case BEREncoding.CONTEXT_SPECIFIC_TAG:
+//	dest.print("CONTEXTSPECIFIC=");
+//	break;
+//    case BEREncoding.PRIVATE_TAG:
+//	dest.print("PRIVATE=");
+//	break;
+//    }
+//    dest.print('"');
+//    dest.print(String.valueOf(i_tag));
+//    dest.print('"');
+//
+//    dest.print(" xer:enc=\"hex\">");
+//
+//    for (int x = 0; x < contents_octets.length; x++) {
+//	// Dump each octet in hex
+//
+//	int octet = contents_octets[x];
+//	char[] hex = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+//		       'a', 'b', 'c', 'd', 'e', 'f' };
+//
+//	dest.print(hex[((octet >> 4) & 0x0f)]);
+//	dest.print(hex[(octet & 0x0f)]);
+//    }
+//    
+//    dest.print("</" + title + ">");
+//  }
+
 } // BERPrimitive
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: BERPrimitive.java,v $
+  Revision 1.6  1999/04/07 01:23:47  hoylen
+  Fixed XER encoding of ANY to be a single BER rather than as individual parts
+
+  Revision 1.5  1999/03/17 05:45:41  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.4  1999/03/17 00:32:19  hoylen
+  Added ZSQL RS
+
+  Revision 1.3  1999/03/15 07:35:02  hoylen
+  Implemented experimental XER encoding and decoding
+
+  Revision 1.2  1998/12/29 02:24:59  hoylen
+  Fixed new directory structure
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1Any.java,v 1.5 1999/04/13 07:23:05 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -30,8 +30,8 @@ package asn1;
  * The current implementation assumes values are limited to 32-bit
  * signed integers for tags, lengths, etc.
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/04/13 07:23:05 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 public class ASN1Any
@@ -72,7 +72,7 @@ ASN1Any(BEREncoding ber, boolean check_tag)
    *
    * This method will be overridden by derived types.
    *
-   * @param ber_enc The BER encoding to use.
+   * @param ber The BER encoding to use.
    * @param check_tag If true, it checks the tag. Does nothing for ASN1Any.
    * @exception	ASN1Exception If the BER encoding is incorrect. 
    *            Never occurs for ASN1Any.
@@ -92,15 +92,15 @@ ber_decode(BEREncoding ber_enc, boolean check_tag)
    * This method is usually overridden by a subclass method.
    *
    * @exception	ASN1Exception If the object cannot be BER encoded. 
-   * @return BER encoding
    */
 
 public BEREncoding
 ber_encode()
        throws ASN1Exception
   {
-    if (asn1any_ber == null)
+    if (asn1any_ber == null) {
       throw new ASN1EncodingException("ASN.1 ANY: uninitialised");
+    }
 
     return asn1any_ber;
   }
@@ -119,8 +119,9 @@ public BEREncoding
 ber_encode(int tag_type, int tag)
        throws ASN1Exception
 {
-  if (asn1any_ber == null)
+  if (asn1any_ber == null) {
     throw new ASN1EncodingException("ASN.1 ANY: uninitialised");
+  }
 
   // Can't really do it, this method is really for overriding
   // in the subclasses.
@@ -138,8 +139,9 @@ ber_encode(int tag_type, int tag)
 public String
 toString()
   {
-    if (asn1any_ber == null)
+    if (asn1any_ber == null) {
       return "<empty ASN.1 ANY>";
+    }
 
     return asn1any_ber.toString();
   }
@@ -151,11 +153,50 @@ toString()
 
 private BEREncoding asn1any_ber;
 
+  //================================================================
+  // XER (XML Encoding Rules) code
+
+  //----------------------------------------------------------------
+  /**
+   * Produces the XER encoding of the object.
+   *
+   * @param	dest the destination XER encoding is written to
+   * @exception ASN1Exception if data is invalid.
+   */
+
+  public void
+    xer_encode(java.io.PrintWriter dest)
+    throws ASN1Exception
+  {
+    if (asn1any_ber != null) {
+      asn1any_ber.xer_encode(dest);
+
+    } else {
+      throw new ASN1Exception("XER encoding not available for " +
+			      this.getClass().getName());
+    }
+  }
+
 } // ASN1Any
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1Any.java,v $
+  Revision 1.5  1999/04/13 07:23:05  hoylen
+  Updated encoding code to latest XER encoding rules
+
+  Revision 1.4  1999/03/17 05:45:34  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.3  1999/03/17 00:32:14  hoylen
+  Added ZSQL RS
+
+  Revision 1.2  1999/03/15 07:34:58  hoylen
+  Implemented experimental XER encoding and decoding
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1Decoder.java,v 1.3 1999/04/20 23:58:26 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -11,8 +11,6 @@
 
 package asn1;
 
-import java.io.*;
-
 //----------------------------------------------------------------
 /**
  * ASN1Decoder
@@ -21,15 +19,14 @@ import java.io.*;
  * (those with UNIVERSAL tag types).
  * It is used for decoding generic BER encodings into ASN.1 objects.
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/04/20 23:58:26 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
 
 public class ASN1Decoder
 {
-  private static String foo = "foo";
 
 public static ASN1Any
 toASN1(BEREncoding ber)
@@ -76,7 +73,8 @@ toASN1(BEREncoding ber)
       case ASN1External.TAG: // 0x08
 	return new ASN1External(ber, true);
 
-	// 0x09 Real
+      case ASN1Real.TAG: // 0x09
+	return new ASN1Real(ber, true);
 
       case ASN1Enumerated.TAG: // 0x0A
 	return new ASN1Enumerated(ber, true);
@@ -129,7 +127,16 @@ toASN1(BEREncoding ber)
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1Decoder.java,v $
+  Revision 1.3  1999/04/20 23:58:26  hoylen
+  Added decoding of REALs.
+
+  Revision 1.2  1999/03/17 05:45:35  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF

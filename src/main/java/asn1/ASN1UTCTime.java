@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * $Id: ASN1UTCTime.java,v 1.2 1999/03/17 05:45:39 hoylen Exp $
  *
  * Copyright (C) 1996, Hoylen Sue.  All Rights Reserved.
  *
@@ -16,7 +16,7 @@ package asn1;
  * ASN.1 UTCTime
  * <p>
  *
- * The <code>UTCTime</code> type denotes a "coordinated universal time"
+ * The <code>UTCTime<code> type denotes a "coordinated universal time"
  * or Greenwich Mean Time (GMT) value. The value includes the local
  * time precise to either minutes or seconds, and an offset from GMT
  * in hours and minutes.
@@ -30,8 +30,8 @@ package asn1;
  *   YYMMDDhhmmZ
  *   YYMMDDhhmmZ
  *
- * @version	$Release$ $Date$
- * @author	Hoylen Sue (h.sue@ieee.org)
+ * @version	$Release$ $Date: 1999/03/17 05:45:39 $
+ * @author	Hoylen Sue <h.sue@ieee.org>
  */
 
 //----------------------------------------------------------------
@@ -43,7 +43,7 @@ public final class ASN1UTCTime extends ASN1VisibleString
    * This constant is the UNIVERSAL tag value for UTCTime.
    */
 
-public static final int TAG = 0x17;
+public final static int TAG = 0x17;
 
   /**
    * Constructor for an UTCTime object. It sets the tag to the
@@ -75,10 +75,11 @@ ASN1UTCTime(BEREncoding ber, boolean check_tag)
     
     if (check_tag) {
       if (ber.tag_get() != TAG || 
-	  ber.tag_type_get() != BEREncoding.UNIVERSAL_TAG)
+	  ber.tag_type_get() != BEREncoding.UNIVERSAL_TAG) {
 	throw new ASN1EncodingException
 	  ("ASN.1 UTCTime: bad BER: tag=" + ber.tag_get() + 
 	   " expected " + TAG + "\n");
+      }
     }
   }
 
@@ -101,7 +102,13 @@ ber_encode()
 
 //----------------------------------------------------------------
 /*
-  $Log$
+  $Log: ASN1UTCTime.java,v $
+  Revision 1.2  1999/03/17 05:45:39  hoylen
+  Tidied up for metamata audit code checking software
+
+  Revision 1.1.1.1  1998/12/29 00:19:40  hoylen
+  Imported sources
+
   */
 //----------------------------------------------------------------
 //EOF
