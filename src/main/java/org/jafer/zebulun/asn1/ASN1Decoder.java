@@ -112,6 +112,10 @@ public class ASN1Decoder {
 
         case ASN1GeneralString.TAG: // 0x1B (27)
           return new ASN1GeneralString(ber, true);
+          
+        default:
+          // Failed to match
+          return new ASN1Any(ber, true);
       } // switch
     }
 

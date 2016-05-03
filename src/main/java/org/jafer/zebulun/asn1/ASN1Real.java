@@ -130,78 +130,68 @@ public final class ASN1Real extends ASN1Any {
 
         // Right now, we only support base-2 encoding.
         if (base_code != 0x00) {
-          if (base_code == 0x01) {
-            throw new ASN1EncodingException("ASN.1 REAL: base-8 unsupported");
-          } else if (base_code == 0x02) {
-            throw new ASN1EncodingException("ASN.1 REAL: base-16 unsupported");
-          } else {
-            throw new ASN1EncodingException("ASN.1 REAL: base unsupported");
+          switch (base_code) {
+            case 0x01:
+              throw new ASN1EncodingException("ASN.1 REAL: base-8 unsupported");
+            case 0x02:
+              throw new ASN1EncodingException("ASN.1 REAL: base-16 unsupported");
+            default:
+              throw new ASN1EncodingException("ASN.1 REAL: base unsupported");
           }
         }
 
         // Extract the exponent
         int start_of_mantissa;
         long exponent;
-        if (exp_size_code == 0x00) {
-          // 1-byte exponent
-
-          if (encoding.length < 2) {
-            throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
-          }
-          exponent = encoding[1];
-          if ((exponent & 0x00000080) != 0) {
-            exponent |= 0xFFFFFF00; // sign extent one-byte value
-          }
-          start_of_mantissa = 2;
-
-        } else if (exp_size_code == 0x01) {
-          // 2-byte exponent
-
-          if (encoding.length < 3) {
-            throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
-          }
-          exponent = (encoding[1] << 8) | (encoding[2]);
-          if ((exponent & 0x00008000) != 0) {
-            exponent |= 0xFFFF0000; // sign extent two-byte value
-          }
-          start_of_mantissa = 3;
-
-        } else if (exp_size_code == 0x10) {
-          // 3-byte exponent
-
-          if (encoding.length < 3) {
-            throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
-          }
-          exponent = (encoding[1] << 16) | (encoding[2] << 8) | (encoding[3]);
-          if ((exponent & 0x00800000) != 0) {
-            exponent |= 0xFF000000; // sign extent three-byte value
-          }
-          start_of_mantissa = 4;
-
-        } else {
-          // Variable length exponent
-
-          if (encoding.length < 3) {
-            throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
-          }
-          int num_bytes_for_exponent = encoding[1];
-          num_bytes_for_exponent &= 0x00FF; // treated as an unsigned byte
-
-          if (encoding.length < num_bytes_for_exponent + 2) {
-            throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
-          }
-
-          if ((encoding[2] & 0x80) != 0) {
-            exponent = -1; // prepare for sign extention of value
-          } else {
-            exponent = 0;
-          }
-          for (int x = 0; x < num_bytes_for_exponent; x++) {
-            exponent <<= 8;
-            exponent |= encoding[2 + x];
-          }
-
-          start_of_mantissa = num_bytes_for_exponent + 2;
+        switch (exp_size_code) {
+          case 0x00:
+            // 1-byte exponent
+            
+            if (encoding.length < 2) {
+              throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
+            } exponent = encoding[1];
+            if ((exponent & 0x00000080) != 0) {
+              exponent |= 0xFFFFFF00; // sign extent one-byte value
+            } start_of_mantissa = 2;
+            break;
+          case 0x01:
+            // 2-byte exponent
+            
+            if (encoding.length < 3) {
+              throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
+            } exponent = (encoding[1] << 8) | (encoding[2]);
+            if ((exponent & 0x00008000) != 0) {
+              exponent |= 0xFFFF0000; // sign extent two-byte value
+            } start_of_mantissa = 3;
+            break;
+          case 0x10:
+            // 3-byte exponent
+            
+            if (encoding.length < 3) {
+              throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
+            } exponent = (encoding[1] << 16) | (encoding[2] << 8) | (encoding[3]);
+            if ((exponent & 0x00800000) != 0) {
+              exponent |= 0xFF000000; // sign extent three-byte value
+            } start_of_mantissa = 4;
+            break;
+          default:
+            // Variable length exponent
+            
+            if (encoding.length < 3) {
+              throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
+            } int num_bytes_for_exponent = encoding[1];
+            num_bytes_for_exponent &= 0x00FF; // treated as an unsigned byte
+            if (encoding.length < num_bytes_for_exponent + 2) {
+              throw new ASN1EncodingException("ASN.1 REAL: unexpected end");
+            } if ((encoding[2] & 0x80) != 0) {
+              exponent = -1; // prepare for sign extention of value
+            } else {
+              exponent = 0;
+            } for (int x = 0; x < num_bytes_for_exponent; x++) {
+              exponent <<= 8;
+              exponent |= encoding[2 + x];
+            } start_of_mantissa = num_bytes_for_exponent + 2;
+            break;
         }
 
         // Extract the mantissa
@@ -302,12 +292,15 @@ public final class ASN1Real extends ASN1Any {
           throw new ASN1EncodingException("ASN.1 REAL: bad encoding");
         }
 
-        if (first_octet == 0x40) {
-          value = java.lang.Double.POSITIVE_INFINITY;
-        } else if (first_octet == 0x41) {
-          value = java.lang.Double.NEGATIVE_INFINITY;
-        } else {
-          throw new ASN1EncodingException("ASN.1 REAL: bad special value");
+        switch (first_octet) {
+          case 0x40:
+            value = java.lang.Double.POSITIVE_INFINITY;
+            break;
+          case 0x41:
+            value = java.lang.Double.NEGATIVE_INFINITY;
+            break;
+          default:
+            throw new ASN1EncodingException("ASN.1 REAL: bad special value");
         }
 
       } else {
@@ -504,7 +497,7 @@ public final class ASN1Real extends ASN1Any {
     } else if (value == java.lang.Double.POSITIVE_INFINITY) {
       dest.write("PLUS-INFINITY");
 
-    } else if (value == java.lang.Double.NaN) {
+    } else if (Double.isNaN(value)) {
       throw new ASN1Exception("ASN.1 REAL: NaN cannot be XER encoded");
 
     } else {

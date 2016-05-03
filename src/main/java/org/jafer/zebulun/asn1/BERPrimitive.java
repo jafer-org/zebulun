@@ -100,6 +100,8 @@ public class BERPrimitive extends BEREncoding {
       case BEREncoding.PRIVATE_TAG:
         str.append("PRIVATE ");
         break;
+      default:
+        break;
     }
     str.append(String.valueOf(i_tag)).append("] '");
 

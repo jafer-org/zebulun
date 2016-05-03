@@ -222,11 +222,11 @@ public class ASN1OctetString extends ASN1Any {
   }
 
   //----------------------------------------------------------------
-  private static final char[] oct = {
+  private static final char[] OCT = {
     '0', '1', '2', '3', '4', '5', '6', '7'
   };
 
-  private static final char[] hex = {
+  private static final char[] HEX = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };
@@ -289,9 +289,9 @@ public class ASN1OctetString extends ASN1Any {
 
           buf.append('\\');
 
-          buf.append(oct[((octet >> 6) & 0x07)]);
-          buf.append(oct[((octet >> 3) & 0x07)]);
-          buf.append(oct[(octet & 0x07)]);
+          buf.append(OCT[((octet >> 6) & 0x07)]);
+          buf.append(OCT[((octet >> 3) & 0x07)]);
+          buf.append(OCT[(octet & 0x07)]);
         }
       }
       buf.append('"');
@@ -304,8 +304,8 @@ public class ASN1OctetString extends ASN1Any {
       for (int x = 0; x < size; x++) {
         char octet = (char) octets[x];
 
-        buf.append(hex[((octet >> 4) & 0x0f)]);
-        buf.append(hex[(octet & 0x0f)]);
+        buf.append(HEX[((octet >> 4) & 0x0f)]);
+        buf.append(HEX[(octet & 0x0f)]);
       }
 
       buf.append("'H");
@@ -369,8 +369,8 @@ public class ASN1OctetString extends ASN1Any {
       for (int x = 0; x < size; x++) {
         char octet = (char) octets[x];
 
-        dest.print(hex[((octet >> 4) & 0x0f)]);
-        dest.print(hex[(octet & 0x0f)]);
+        dest.print(HEX[((octet >> 4) & 0x0f)]);
+        dest.print(HEX[(octet & 0x0f)]);
       }
 
       dest.print("</xer:Hex>");

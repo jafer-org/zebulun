@@ -269,12 +269,16 @@ public final class ASN1Boolean extends ASN1Any {
           }
 
           String str = new String(ch, begin, nws_end - begin);
-          if (str.equals("false")) {
-            proxy_value = false;
-          } else if (str.equals("true")) {
-            proxy_value = true;
-          } else {
-            handler.throw_characters_unexpected(xer_tag);
+          switch (str) {
+            case "false":
+              proxy_value = false;
+              break;
+            case "true":
+              proxy_value = true;
+              break;
+            default:
+              handler.throw_characters_unexpected(xer_tag);
+              break;
           }
 
           // Check that remaining characters are all whitespace

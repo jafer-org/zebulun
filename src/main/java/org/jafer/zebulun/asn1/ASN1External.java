@@ -557,32 +557,34 @@ public final class ASN1External extends ASN1Any {
     @Override
     public void member(XERsaxHandler handler, ASN1Any result)
             throws org.xml.sax.SAXException {
-      if (istate == STATE_DIRECT_REFERENCE_GETTING) {
-        proxy_value.s_direct_reference = (ASN1ObjectIdentifier) result;
-        istate = STATE_DIRECT_REFERENCE_GOT;
-
-      } else if (istate == STATE_INDIRECT_REFERENCE_GETTING) {
-        proxy_value.s_indirect_reference = (ASN1Integer) result;
-        istate = STATE_INDIRECT_REFERENCE_GOT;
-
-      } else if (istate == STATE_DATA_VALUE_DESCRIPTOR_GETTING) {
-        proxy_value.s_data_value_descriptor = (ASN1ObjectDescriptor) result;
-        istate = STATE_DATA_VALUE_DESCRIPTOR_GOT;
-
-      } else if (istate == STATE_SINGLE_ASN1_TYPE_GETTING) {
-        proxy_value.c_singleASN1type = result;
-        istate = STATE_ENCODING_GOT;
-
-      } else if (istate == STATE_OCTET_ALIGNED_GETTING) {
-        proxy_value.c_octetAligned = (ASN1OctetString) result;
-        istate = STATE_ENCODING_GOT;
-
-      } else if (istate == STATE_ARBITRARY_GETTING) {
-        proxy_value.c_arbitrary = (ASN1BitString) result;
-        istate = STATE_ENCODING_GOT;
-
-      } else {
-        handler.throw_member_unexpected(xer_tag);
+      switch (istate) {
+        case STATE_DIRECT_REFERENCE_GETTING:
+          proxy_value.s_direct_reference = (ASN1ObjectIdentifier) result;
+          istate = STATE_DIRECT_REFERENCE_GOT;
+          break;
+        case STATE_INDIRECT_REFERENCE_GETTING:
+          proxy_value.s_indirect_reference = (ASN1Integer) result;
+          istate = STATE_INDIRECT_REFERENCE_GOT;
+          break;
+        case STATE_DATA_VALUE_DESCRIPTOR_GETTING:
+          proxy_value.s_data_value_descriptor = (ASN1ObjectDescriptor) result;
+          istate = STATE_DATA_VALUE_DESCRIPTOR_GOT;
+          break;
+        case STATE_SINGLE_ASN1_TYPE_GETTING:
+          proxy_value.c_singleASN1type = result;
+          istate = STATE_ENCODING_GOT;
+          break;
+        case STATE_OCTET_ALIGNED_GETTING:
+          proxy_value.c_octetAligned = (ASN1OctetString) result;
+          istate = STATE_ENCODING_GOT;
+          break;
+        case STATE_ARBITRARY_GETTING:
+          proxy_value.c_arbitrary = (ASN1BitString) result;
+          istate = STATE_ENCODING_GOT;
+          break;
+        default:
+          handler.throw_member_unexpected(xer_tag);
+          break;
       }
 
     }

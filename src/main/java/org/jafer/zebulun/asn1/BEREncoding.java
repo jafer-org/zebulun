@@ -498,7 +498,7 @@ public abstract class BEREncoding {
   }
 
   //----------------------------------------------------------------
-  private static final char[] hex = {
+  private static final char[] HEX = {
     '0', '1', '2', '3', '4', '5', '6', '7',
     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };
@@ -516,8 +516,8 @@ public abstract class BEREncoding {
     for (int x = 0; x < ber_encoding.length; x++) {
       byte octet = ber_encoding[x];
 
-      dest.print(hex[((octet >> 4) & 0x0f)]);
-      dest.print(hex[(octet & 0x0f)]);
+      dest.print(HEX[((octet >> 4) & 0x0f)]);
+      dest.print(HEX[(octet & 0x0f)]);
     }
 
     dest.print("</xer:Hex>");
