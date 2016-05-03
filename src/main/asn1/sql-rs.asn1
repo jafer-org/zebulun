@@ -1,0 +1,337 @@
+-- Z39.50 SQL Record Syntax, Issue 2
+-- Copyright (C) 1999, DSTC Pty Ltd.
+
+Z39-50-EXTERNALS-SQL-RS DEFINITIONS ::= BEGIN
+
+
+IMPORTS InternationalString
+FROM Z39-50-APDU-1995;
+
+IMPORTS LanguageCode
+FROM RecordSyntax-explain;
+
+IMPORTS PrivateCharacterSet, Iso2022, Iso10646
+FROM NegotiationRecordDefinition-charSetandLanguageNegotiation-2;
+
+
+SQL-Result ::= SEQUENCE {
+  tableDescriptor               [0] IMPLICIT SQLTableDescriptor OPTIONAL,
+  listOfResultValues            [1] IMPLICIT SEQUENCE OF SQLRowValue OPTIONAL}
+ 
+SQLTableDescriptor ::= SEQUENCE {
+  tableName                     [0] IMPLICIT InternationalString OPTIONAL,
+  listOfColumnDescriptors       [1] IMPLICIT SEQUENCE OF SQLColumnDescriptor,
+  tableConstraint               [2] IMPLICIT SEQUENCE OF SEQUENCE {
+    listOfColumnNames             [0] IMPLICIT SEQUENCE OF InternationalString,
+    uniqueConstraint              [1] IMPLICIT SQLUniqueConstraint OPTIONAL,
+    check                         [2] IMPLICIT InternationalString OPTIONAL } }
+  
+SQLColumnDescriptor ::= SEQUENCE {
+  columnName                    [0] IMPLICIT InternationalString,
+  dataType              	[1] SQLDataDescriptor,
+  columnConstraint      	[2] IMPLICIT SEQUENCE OF SEQUENCE {
+    nullable            	  [0] IMPLICIT BOOLEAN,
+    uniqueConstraint    	  [1] IMPLICIT SQLUniqueConstraint OPTIONAL,
+    check               	  [2] IMPLICIT InternationalString OPTIONAL },
+  sqlDefault            	[3] SQLDefaultOption OPTIONAL,
+  collation             	[4] IMPLICIT SQLCollationClause OPTIONAL }
+  
+SQLUniqueConstraint ::= INTEGER {
+  unique (1),
+  primaryKey (2) }
+
+SQLCollationClause ::= SEQUENCE {
+  collationCatalog              [0] IMPLICIT InternationalString OPTIONAL,
+  collationSchema               [1] IMPLICIT InternationalString OPTIONAL,
+  collationName                 [2] IMPLICIT InternationalString OPTIONAL }
+
+SQLCharacterSetClause ::= SEQUENCE {
+  characterSetCatalog           [0] IMPLICIT InternationalString OPTIONAL,
+  characterSetSchema            [1] IMPLICIT InternationalString OPTIONAL,
+  characterSetName              [2] IMPLICIT InternationalString OPTIONAL }
+
+Z3950CharacterSetLanguageClause ::= SEQUENCE {
+  characterSet                  [0] CHOICE {
+    iso2022                       [1] Iso2022,
+    iso10646                      [2] IMPLICIT Iso10646,
+    private                       [3] PrivateCharacterSet,
+    none                          [4] IMPLICIT NULL } OPTIONAL,
+  language                      [1] IMPLICIT LanguageCode OPTIONAL }
+
+--- SQL Data Type Descriptors
+--- (note: sequence number aligned to SQL/CLI data type descriptor codes)
+
+SQLDataDescriptor ::= CHOICE {
+  
+  -- SQL Type: character
+  characterType                 [1] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER,
+    sqlCharacterSet               [1] IMPLICIT SQLCharacterSetClause OPTIONAL,
+    zCharacterSetLanguage         [2] IMPLICIT Z3950CharacterSetLanguageClause OPTIONAL,
+    collation                     [3] IMPLICIT SQLCollationClause OPTIONAL },
+ 
+  -- SQL Type: numeric
+  numericType                   [2] SEQUENCE {
+    precision                     [0] IMPLICIT INTEGER,
+    scale                         [1] IMPLICIT INTEGER },
+ 
+  -- SQL Type: decimal
+  decimalType                   [3] SEQUENCE {
+    precision                     [0] IMPLICIT INTEGER,
+    scale                         [1] IMPLICIT INTEGER },
+ 
+  -- SQL Type: integer
+  integerType                   [4] SEQUENCE {
+    precision                     [0] IMPLICIT INTEGER OPTIONAL,
+    precisionBase                 [1] IMPLICIT INTEGER {
+      binary (0),
+      decimal (1) } },
+ 
+  -- SQL Type: smallInt
+  smallIntType                  [5] SEQUENCE {
+    precision                     [0] IMPLICIT INTEGER OPTIONAL,
+    precisionBase                 [1] IMPLICIT INTEGER {
+      binary (0),
+      decimal (1) } },
+ 
+  -- SQL Type: float
+  floatType                     [6] SEQUENCE {
+    mantissaPrecision             [0] IMPLICIT INTEGER,
+    maxExponent                   [1] IMPLICIT INTEGER },
+ 
+  -- SQL Type: real
+  realType                      [7] SEQUENCE {
+    mantissaPrecision             [0] IMPLICIT INTEGER,
+    maxExponent                   [1] IMPLICIT INTEGER },
+ 
+  -- SQLType: doublePrecision
+  doublePrecisionType           [8] SEQUENCE {
+    mantissaPrecision             [0] IMPLICIT INTEGER,
+    maxExponent                   [1] IMPLICIT INTEGER },
+
+  -- SQLType: dateTime
+  dateTimeType                  [9] IMPLICIT SEQUENCE {
+    dateTimeQualifier             [0] IMPLICIT INTEGER {
+      date (1),
+      time (2),
+      timeStamp (3),
+      timeWithTimeZone (4),
+      timeStampWithTimeZone (5) },
+    fractionalSecondsPrecision    [1] IMPLICIT INTEGER OPTIONAL},
+ 
+  -- SQLType: interval
+  intervalType                  [10] IMPLICIT SEQUENCE {
+    intervalQualifier             [0] IMPLICIT INTEGER {
+      year                            (1),
+      month                           (2),
+      day                             (3),
+      hour                            (4),
+      minute                          (5),
+      second                          (6),
+      yearToMonth                     (7),
+      dayToHour                       (8),
+      dayToMinute                     (9),
+      dayToSecond                     (10),
+      hourToMinute                    (11),
+      hourToSecond                    (12),
+      minuteToSecond                  (13) },
+    leadingFieldPrecision         [1] IMPLICIT INTEGER OPTIONAL,
+    fractionalSecondsPrecision    [2] IMPLICIT INTEGER OPTIONAL },
+ 
+  -- SQLType: varchar
+  varcharType                   [12] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER,
+    characterSet                  [1] IMPLICIT SQLCharacterSetClause OPTIONAL,
+    collation                     [2] IMPLICIT SQLCollationClause OPTIONAL },
+ 
+  -- SQLType: boolean
+  booleanType                   [13] IMPLICIT NULL, 
+
+  -- SQLType: bit stream
+  bitType                       [14] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER },
+  
+  -- SQLType: varying bit stream
+  bitVarType                    [15] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER },
+
+  -- SQLType: user defined type
+  sqlUserDefinedType            [17] IMPLICIT SQLUserDefinedType,
+      
+  -- SQLType: user defined type locator
+  sqlUserDefinedTypeLocatorType [18] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER },
+
+  --SQLType: row
+  sqlRowType                    [19] IMPLICIT SEQUENCE OF SEQUENCE {
+    fieldName                     [0] IMPLICIT InternationalString,
+    dataType                      [1] SQLDataDescriptor },
+
+  -- SQLType: reference
+  sqlReferenceType              [20] SEQUENCE {
+    referencedType                [0] IMPLICIT SQLUserDefinedType,
+    scopeTableName                [1] IMPLICIT InternationalString OPTIONAL },
+
+  -- SQLType: collection
+  sqlCollectionType             [21] SEQUENCE {
+    dataType                      [0] SQLDataDescriptor,
+    collectionTypeConstructor     [1] IMPLICIT SEQUENCE {
+      size                          [0] IMPLICIT INTEGER,
+      type                          [1] IMPLICIT INTEGER {
+  array                                 (1),
+  set                                   (2)  } } },
+
+  -- SQLType: collection locator 
+  sqlCollectionLocatorType      [22] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER },
+  
+  -- SQLType: BLOB (Binary Large Object)
+  bLOBType                      [30] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER }, 
+
+  -- bLOBLocatorType (Binary Large Object Locator)
+  bLOBLocatorType               [31] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER },
+
+  -- SQLType: CLOB (Character Large Object)
+  cLOBType                      [40] SEQUENCE {
+    length                        [0] IMPLICIT INTEGER,
+    sqlCharacterSet               [1] IMPLICIT SQLCharacterSetClause OPTIONAL,
+    zCharacterSetLanguage         [2] IMPLICIT Z3950CharacterSetLanguageClause OPTIONAL,
+    collation                     [3] IMPLICIT SQLCollationClause OPTIONAL },
+
+  -- cLOBLocatorType (Character Large Object Locator)
+  cLOBLocatorType               [41] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER },
+  
+  -- SQLType: result set
+  sqlResultSetType              [50] IMPLICIT SEQUENCE OF SEQUENCE {
+    resultSetName                 [0] IMPLICIT InternationalString,
+    size                          [1] IMPLICIT INTEGER,
+    listOfSQLDataDescriptors      [2] IMPLICIT SEQUENCE OF SQLDataDescriptor },
+
+  -- SQLType: result set locator
+  sqlResultSetLocatorType       [51] IMPLICIT SEQUENCE {
+    length                        [0] IMPLICIT INTEGER } }
+
+SQLUserDefinedType ::= SEQUENCE {
+  udtName                       [0] IMPLICIT InternationalString,
+  ordering                      [1] IMPLICIT SQLOrderingDescriptor OPTIONAL, 
+  superTypeName                 [2] IMPLICIT InternationalString OPTIONAL,
+    representation              [3] IMPLICIT CHOICE {
+      distinct                    [0] IMPLICIT SQLDataDescriptor,
+      -- must be a 'predefined' SQLDataDescriptor
+      structured                  [1] IMPLICIT SEQUENCE OF SQLAttributeDescriptor,
+      system-generated            [2] IMPLICIT NULL },
+    instantiable                [4] IMPLICIT BOOLEAN,
+    final                       [5] IMPLICIT BOOLEAN,
+    transformDesc               [6] IMPLICIT SEQUENCE OF SQLTransformDescriptor OPTIONAL,
+    methodSpecList              [7] IMPLICIT SEQUENCE OF SQLMethodSpecDescriptor OPTIONAL }
+
+SQLOrderingDescriptor ::= SEQUENCE {
+  orderingForm                  [1] IMPLICIT INTEGER {
+    equals (1),
+    full (2),
+    none (3) },
+  orderingCategory              [2] IMPLICIT CHOICE {
+    relativeRoutineName           [0] IMPLICIT InternationalString,
+    hashRoutineName               [1] IMPLICIT InternationalString,
+    stateRoutineName              [2] IMPLICIT InternationalString } }
+
+
+SQLAttributeDescriptor ::= SEQUENCE {
+  attributeName                 [0] IMPLICIT InternationalString,
+  dataDescriptor                [1] IMPLICIT SQLDataDescriptor OPTIONAL,
+  collation                     [2] IMPLICIT SQLCollationClause OPTIONAL }
+
+SQLTransformDescriptor ::= SEQUENCE {
+  groupName                     [0] IMPLICIT InternationalString,
+  fromSQLFunctionName           [1] IMPLICIT InternationalString OPTIONAL,
+  toSQLFunctionName             [2] IMPLICIT InternationalString OPTIONAL}
+
+SQLMethodSpecDescriptor ::= SEQUENCE {
+  routineName                   [0] IMPLICIT InternationalString,
+  parameterList                 [1] IMPLICIT SEQUENCE OF SEQUENCE {
+    parameterName                 [0] IMPLICIT InternationalString OPTIONAL,
+    mode                          [1] IMPLICIT INTEGER {
+      in (1),
+      out (2),
+      inout (3) } OPTIONAL,
+    type                          [2] IMPLICIT SQLDataDescriptor },
+  languageName                  [2] IMPLICIT InternationalString OPTIONAL,
+  parameterStyle                [3] IMPLICIT INTEGER {
+    sql (1),
+    general (2) } OPTIONAL,
+  returnsDataDescriptor         [4] IMPLICIT SQLDataDescriptor OPTIONAL,
+  methodSpecType                [5] IMPLICIT INTEGER {
+    originalSelfAsResult (1),
+    originalSelfAsLocator (2),
+    overriding (3) } OPTIONAL,
+  methodType                    [6] IMPLICIT INTEGER {
+    instance (1),
+    static (2) } OPTIONAL,
+  deterministic                 [7] IMPLICIT BOOLEAN OPTIONAL,
+  possibleMethodFunction        [8] IMPLICIT INTEGER {  
+    noSQL                           (1),
+    containsSQL                     (2),
+    readsSQLData                    (3),
+    writesSQLData                   (4) } OPTIONAL,
+  invokableWhenNull             [9] IMPLICIT BOOLEAN OPTIONAL }
+  
+
+SQLDefaultOption ::= CHOICE {
+  sqlValue                      [0] IMPLICIT SQLValue,
+  other                         [1] IMPLICIT INTEGER {
+    user                            (1),
+    currentuser                     (2),
+    sessionuser                     (3),
+    systemuser                      (4),
+    currentpath                     (5),
+    sqlnull                         (6),
+    sqlempty                        (7) } }
+
+SQLRowValue ::= SEQUENCE OF SQLFieldValue
+ 
+SQLFieldValue ::= SEQUENCE {
+  sqlException                  [0] IMPLICIT SQLException OPTIONAL,
+  resultValue                   [1] IMPLICIT SQLValue OPTIONAL }
+ 
+SQLException ::= SEQUENCE {
+  sqlState                      [0] IMPLICIT InternationalString OPTIONAL,
+  sqlCode                       [1] IMPLICIT INTEGER OPTIONAL,
+  sqlErrorText                  [2] IMPLICIT InternationalString OPTIONAL }
+ 
+SQLValue ::= SEQUENCE {
+  dataItem                      CHOICE {
+    characterItem                 [1] OCTET STRING,
+    numericItem                   [2] INTEGER,
+    decimalItem                   [3] INTEGER,
+    integerItem                   [4] INTEGER,
+    smallIntItem                  [5] INTEGER,
+    floatItem                     [6] REAL,
+    realItem                      [7] REAL,
+    doublePrecisionItem           [8] REAL,
+    dateTimeItem                  [9] InternationalString,
+    intervalItem                  [10] InternationalString,
+    varcharItem                   [12] OCTET STRING,
+    booleanItem                   [13] BOOLEAN,
+    bitItem                       [14] BIT STRING,
+    bitVarItem                    [15] BIT STRING,
+    udtItem                       [17] SEQUENCE OF SQLValue,
+    udtLocator                    [18] OCTET STRING,
+    rowItem                       [19] SEQUENCE OF SQLValue,
+    refItem                       [20] OCTET STRING,
+    collectionItem                [21] SEQUENCE OF SQLValue,
+    collectionLocator             [22] OCTET STRING,
+    bLOBItem                      [30] OCTET STRING,
+    bLOBLocator                   [31] OCTET STRING,
+    cLOBItem                      [40] OCTET STRING,
+    cLOBLocator                   [41] OCTET STRING,
+    resultSetItem                 [50] SEQUENCE OF SQLValue,
+    resultSetLocator              [51] OCTET STRING } OPTIONAL,
+  indicator                     [50] IMPLICIT INTEGER {
+    sqlnull                         (1),
+    sqlempty                        (2),
+    sqldefault                      (3) } OPTIONAL }
+
+END

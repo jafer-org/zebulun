@@ -3,17 +3,25 @@
 
   <groupId>org.jafer</groupId>
   <artifactId>zebulun</artifactId>
-  <version>1.1.11-SNAPSHOT</version>
+  <version>1.7-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>zebulun</name>
   <description>Zebulun Z39.50 Protocol Library</description>
-  <inceptionYear>1998</inceptionYear>
+  <inceptionYear>1996</inceptionYear>
   <url>https://software.ceridwen.com/redmine/projects/jafer</url>
   <organization>
     <name>Jafer Z39.50 Library Project</name>
     <url>http://www.jafer.org</url>
   </organization>
+
+  <licenses>
+    <license>
+      <name>GNU Lesser General Public License, version 3.0</name>
+      <url>http://www.gnu.org/licenses/lgpl-3.0.en.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
   <issueManagement>
     <system>Redmine</system>
@@ -161,6 +169,116 @@
           <suppressFastForward>true</suppressFastForward>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.4.0</version>
+        <executions>
+          <execution>
+            <id>z3950_v2</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>perl</executable>
+              <arguments>
+                <argument>src\main\perl\ASN1tojava</argument>
+                <argument>-root=org.jafer.zebulun</argument>
+                <argument>-out=${project.build.directory}/generated-sources/zebulun</argument>
+                <argument>-version=${project.artifactId}-${project.version}</argument>               
+                <argument>src\main\asn1\Z3950_v2.asn1</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>z3950_v3</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>perl</executable>
+              <arguments>
+                <argument>src\main\perl\ASN1tojava</argument>
+                <argument>-root=org.jafer.zebulun</argument>
+                <argument>-out=${project.build.directory}/generated-sources/zebulun</argument> 
+                <argument>-version=${project.artifactId}-${project.version}</argument>               
+                <argument>src\main\asn1\Z3950_v3.asn1</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>cip_b</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>perl</executable>
+              <arguments>
+                <argument>src\main\perl\ASN1tojava</argument>
+                <argument>-root=org.jafer.zebulun</argument>
+                <argument>-out=${project.build.directory}/generated-sources/zebulun</argument> 
+                <argument>-version=${project.artifactId}-${project.version}</argument>               
+                <argument>src\main\asn1\cip_b.asn1</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>sql-rs</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>perl</executable>
+              <arguments>
+                <argument>src\main\perl\ASN1tojava</argument>
+                <argument>-root=org.jafer.zebulun</argument>
+                <argument>-out=${project.build.directory}/generated-sources/zebulun</argument> 
+                <argument>-version=${project.artifactId}-${project.version}</argument>               
+                <argument>src\main\asn1\sql-rs.asn1</argument>
+              </arguments>
+            </configuration>
+          </execution>
+          <execution>
+            <id>ldap_v2</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <configuration>
+              <executable>perl</executable>
+              <arguments>
+                <argument>src\main\perl\ASN1tojava</argument>
+                <argument>-root=org.jafer.zebulun</argument>
+                <argument>-out=${project.build.directory}/generated-sources/zebulun</argument> 
+                <argument>-version=${project.artifactId}-${project.version}</argument>               
+                <argument>src\main\asn1\ldap_v2.asn1</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>      
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.10</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources/zebulun</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>      
     </plugins>
   </build>
   

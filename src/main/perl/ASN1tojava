@@ -1,0 +1,3385 @@
+#!/usr/local/bin/perl -w
+#
+# $Source: /projects/rdu/cvsroot/projects/zebulun/ASN1tojava/ASN1tojava,v $
+# $Date: 1999/04/13 07:22:55 $
+# $Revision: 1.7 $
+# $Name:  $
+#
+# Copyright (C) 1996, Hoylen Sue.  All rights reserved.
+#
+# An Abstract Syntax Notation 1 (ASN.1) to Java compiler.
+#
+# This program converts a subset of the ASN.1 specification
+# into a set of Java classes to represent it.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  Refer to
+# the supplied license for more details.
+#----------------------------------------------------------------
+
+# TODO: ???
+# XER parsing code is incomplete, does not handle SEQUENCE OF or
+# SET OF elements.  Also, the asn1 classes do not properly implement
+# the characters() decoding - they expect that all characters are presented
+# as a single contiguous chunk (which is not guaranteed by SAX).
+# Also ANY are not handled.
+
+use File::Basename;
+use File::Path;
+use Cwd;
+
+require 5; # requires Perl version 5 or higher
+
+# Set include path to include this program's source directory
+
+$inc_path = dirname($0);
+@INC = (@INC, $inc_path);
+
+# Required modules
+
+use Getopt::Long;
+
+require ASN1parser;
+
+#================================================================
+# Globals
+
+# Mappings for renaming modules and productions
+
+%module_aliases = 
+  (
+   "IR",				"z3950_v2.apdu",
+
+   "Z39-50-APDU-1995",			"z3950_v3.apdu",
+   "DiagnosticFormatDiag1",		"z3950_v3.DiagFormat",
+   "RecordSyntax-explain",		"z3950_v3.RS_Explain",
+   "RecordSyntax-SUTRS",		"z3950_v3.RS_SUTRS",
+   "RecordSyntax-opac",			"z3950_v3.RS_opac",
+   "RecordSyntax-summary",		"z3950_v3.RS_summary",
+   "RecordSyntax-generic",		"z3950_v3.RS_generic",
+   "RecordSyntax-ESTaskPackage",	"z3950_v3.RS_ESTaskPackage",
+   "ResourceReport-Format-Resource-1",	"z3950_v3.ResourceReport_FR1",
+   "ResourceReport-Format-Resource-2",	"z3950_v3.ResourceReport_FR2",
+   "AccessControlFormat-prompt-1",	"z3950_v3.AccessCtrl_prompt",
+   "AccessControlFormat-des-1",		"z3950_v3.AccessCtrl_des",
+   "AccessControlFormat-krb-1",		"z3950_v3.AccessCtrl_krb",
+   "ESFormat-PersistentResultSet",	"z3950_v3.ESFormat_PersistResultSet",
+   "ESFormat-PersistentQuery",		"z3950_v3.ESFormat_PersistQuery",
+   "ESFormat-PeriodicQuerySchedule",	"z3950_v3.ESFormat_PeriodicQuerySchedule",
+   "ESFormat-ItemOrder",		"z3950_v3.ESFormat_ItemOrder",
+   "ESFormat-Update",			"z3950_v3.ESFormat_Update",
+   "ESFormat-ExportSpecification",	"z3950_v3.ESFormat_ExportSpec",
+   "ESFormat-ExportInvocation",		"z3950_v3.ESFormat_ExportInvocation",
+   "UserInfoFormat-searchResult-1",	"z3950_v3.UserInfoFormat_searchResult",
+   "ElementSpecificationFormat-eSpec-1","z3950_v3.ElementSpec",
+
+   "NegotiationRecordDefinition-charSetandLanguageNegotiation-2",
+     "z3950_v3.Neg_CharSetLang",
+
+   "Lightweight-Directory-Access-Protocol", "ldap_v2",
+
+   # Catalog Interoperability Profile
+   "CIP-Release-B-APDU", "cip_b.apdu", # for European Space Agency ASN.1
+   "CIP-Order-ES", "cip_b.Order_ES", # for European Space Agency ASN.1
+
+   # SQL-RS
+   "Z39-50-EXTERNALS-SQL-RS", "z3950_v3.RS_SQL", # DSTC's zSQL specification
+   );
+
+%production_aliases = 
+  (
+#   "TriggerResourceControlRequest", "foobar"
+   );
+
+# Set canonical program name
+
+($prog = $0) =~ s/^.*\/([^\/]+)$/$1/;
+
+# Global
+
+my $generate_xer = 0;
+
+#----------------------------------------------------------------
+# Constants used in programme
+
+$COMMENT_LINE =
+  "//----------------------------------------------------------------\n";
+
+$DOUBLE_COMMENT_LINE =
+  "//================================================================\n";
+
+#----------------------------------------------------------------
+
+%universal_asn1_types =
+  (
+   "ANY"                => "ASN1Any",
+   "NULL"               => "ASN1Null",
+   "BOOLEAN"            => "ASN1Boolean",
+   "BIT STRING"         => "ASN1BitString",
+   "INTEGER"            => "ASN1Integer",
+   "ENUMERATED"         => "ASN1Enumerated",
+   "REAL"               => "ASN1Real",
+   "OCTET STRING"       => "ASN1OctetString",
+   "OBJECT IDENTIFIER"  => "ASN1ObjectIdentifier",
+   "OBJECT DESCRIPTOR"  => "ASN1ObjectDescriptor",
+   "EXTERNAL"           => "ASN1External",
+   "GeneralString"      => "ASN1GeneralString",
+   "GraphicString"      => "ASN1GraphicString",
+   "IA5String"          => "ASN1IA5String",
+   "NumericString"      => "ASN1NumericString",
+   "PrintableString"    => "ASN1PrintableString",
+   "T61String"          => "ASN1T61String",
+   "VideotexString"     => "ASN1VideotexString",
+   "VisibleString"      => "ASN1VisibleString",
+   "GeneralizedTime"    => "ASN1GeneralizedTime",
+   "UTCTime"            => "ASN1UTCTime",
+   );
+
+sub java_class {
+  my($asn1class) = @_;
+
+  # Translate standard types into the classes implementing them
+
+  my $translated = $universal_asn1_types{$asn1class};
+
+  if (defined($translated)) {
+    $asn1class = $translated;
+  }
+
+  $asn1class =~ s/-/_/g;
+
+  return $asn1class;
+}
+
+sub var_name {
+  my($name, $number_in_list) = @_;
+
+  # Normal variable
+
+  if (defined($name)) {
+    $name =~ s/\-/_/g;
+    $name =~ s/\./_/g;
+    return $name;
+  } else {
+    return "value";
+  }
+}
+
+sub seq_var_name {
+  my($name, $number_in_list) = @_;
+
+  # Variable as a member of a sequence
+  if (defined($name)) {
+    $name =~ s/\-/_/g;
+    $name =~ s/\./_/g;
+    return "s_$name";
+  } else {
+    return "s_$number_in_list";
+  }
+}
+
+sub choice_var_name {
+  my($name, $number_in_list) = @_;
+
+    # Variable as a member of a choice
+
+  if (defined($name)) {
+    $name =~ s/\-/_/g;
+    $name =~ s/\./_/g;
+    return "c_$name";
+  } else {
+    return "c_$number_in_list";
+  }
+}
+
+#----------------------------------------------------------------
+# java_header($fp, $module_reference, $package_path, $module_name, $def_ref)
+#
+# Prints the header of a Java source file to the file handle $fp.
+# The source should be used for defining $name, which is specified
+# by the ASN.1 contained in $def_ref. This header includes the beginning
+# of the class definition.
+
+sub java_header {
+  local($fp,
+	$module_reference,
+	$root_hier, $module_fullname, $class_name,
+	$def_ref, $imports_ref, $version) = @_;
+
+  # $root_hier = "zebulun"
+  # $module_fullname = "z3950_v3.apdu"
+  # $class_name = "PDU"
+  # 
+  # Get current date to use as a timestamp
+
+  my($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = gmtime(time);
+  $year += 1900; # include century
+
+  # Header of comments and copyright notice
+
+  print $fp "/*\n";
+  print $fp " * Copyright (C) $year, Hoylen Sue.  All Rights Reserved.\n";
+  print $fp " * (h.sue\@ieee.org)\n";
+  print $fp " *\n";
+  print $fp " * This program is distributed in ";
+  print $fp "the hope that it will be useful,\n";
+  print $fp " * but WITHOUT ANY WARRANTY; without ";
+  print $fp "even the implied warranty of\n";
+  print $fp " * MERCHANTABILITY or FITNESS FOR A ";
+  print $fp "PARTICULAR PURPOSE.  Refer to\n";
+  print $fp " * the supplied license for more details.\n";
+  print $fp " *\n";
+  print $fp " * Generated by Zebulun $prog: ";
+  printf $fp ("%04d-%02d-%02d %02d:%02d:%02d UTC\n", 
+	      $year, $mon + 1, $mday, $hour, $min, $sec);
+  print $fp " */\n";
+
+  print $fp "\n";
+  print $fp $COMMENT_LINE;
+  print $fp "\n";
+
+  # Standard imports
+
+  print $fp "package $root_hier.$module_fullname;\n";
+  print $fp "\n";
+
+  print $fp "import $root_hier.asn1.*;\n";
+
+  # Extra imports
+
+  foreach (sort(keys(%$imports_ref))) {
+    my $module_id = $_;
+
+    if (! defined($module_aliases{$module_id})) {
+      die "$prog: import module unknown in database: $module_id\n";
+    }
+
+    my $fullname = $module_aliases{$module_id};
+
+    foreach (sort(@{$imports_ref->{$_}})) {
+      print $fp "import $root_hier.$fullname.$_;\n";
+    }
+  }
+  print $fp "\n";
+
+  # Comment for the ASN.1 production
+
+  print $fp $DOUBLE_COMMENT_LINE;
+  print $fp "/**\n";
+  print $fp " * Class for representing the ASN.1 production\n";
+  print $fp " * <code>$class_name</code> from the\n";
+  print $fp " * <code>$module_reference</code> module.\n";
+  print $fp " * <p>\n";
+  print $fp " * The ASN.1 definition is:\n";
+  print $fp " * <pre>\n";
+  print $fp " * $class_name ::=\n";
+  print $fp $def_ref->toString(" * ");
+  print $fp " * </pre>\n";
+  print $fp " *\n";
+  print $fp " * \@version	$version ";
+  printf $fp ("%04d-%02d-%02d\n", $year, $mon + 1, $mday);
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp $COMMENT_LINE;
+  print $fp "\n";
+
+  # Beginning of class definition
+
+  print $fp "public final class $class_name extends ASN1Any\n";
+  print $fp "{\n";
+  print $fp "\n";
+
+  print $fp "/**\n";
+  print $fp " * Internal Zebulun version message.\n";
+  print $fp " */\n";
+  print $fp "\n";
+  print $fp "  public final static String VERSION =\n";
+  print $fp "    \"Copyright (C) Hoylen Sue, $year. ";
+  printf $fp ("%04d%02d%02d%02d%02dZ", 
+	      $year, $mon + 1, $mday, $hour, $min);
+  print $fp "\";\n";
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+# java_constructor($fp, $name)
+#
+# Outputs to $fp the code for the constructor which is used
+# to construct the uninitialized object.
+
+sub java_constructor {
+  my($fp, $class_name, $def_ref) = @_;
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error: $class_name: variable: type complex\n"
+    if (defined($type_value1));
+  
+  print $fp $DOUBLE_COMMENT_LINE;
+  print $fp "/**\n";
+  print $fp " * Default constructor for a $class_name.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public\n";
+  print $fp "$class_name()\n";
+  print $fp "{\n";
+  print $fp "  // does nothing\n";
+  print $fp "}\n";
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+# java_constructor_from_ber($fp, $name)
+#
+# Outputs to $fp the code for the constructor which is used
+# to construct the object from the BER encoding.
+
+sub java_constructor_from_ber {
+  local($fp, $name) = @_;
+
+  print $fp $COMMENT_LINE;
+  print $fp "/**\n";
+  print $fp " * Constructor for a $name from a BER encoding.\n";
+  print $fp " * <p>\n";
+  print $fp " *\n";
+  print $fp " * \@param ber the BER encoding.\n";
+  print $fp " * \@param check_tag will check tag if true, use false\n";
+  print $fp " *         if the BER has been implicitly tagged. You should\n";
+  print $fp " *         usually be passing true.\n";
+  print $fp " * \@exception	ASN1Exception if the BER encoding is bad.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public\n";
+  print $fp "$name(BEREncoding ber, boolean check_tag)\n";
+  print $fp "       throws ASN1Exception\n";
+  print $fp "{\n";
+  print $fp "  super(ber, check_tag);\n";
+  print $fp "}\n";
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+# java_ber_decode($fp, $name, $def_ref)
+#
+# Outputs to $fp code for the decode from BER encoding method
+# for the ASN.1 production of $name, as defined by $def_ref.
+
+sub code_decode_sequence_of {
+  my($fp, $p, $variable, $seq_type, $ber) = @_;
+  
+  print $fp $p, "try {\n";
+  print $fp $p, "  BERConstructed cons = (BERConstructed) $ber;\n";
+  print $fp $p, "  int parts = cons.number_components();\n";
+  print $fp $p, "  $variable = new ", java_class($seq_type),"[parts];\n";
+  print $fp $p, "  int n;\n";
+  print $fp $p, "  for (n = 0; n < parts; n++) {\n";
+  print $fp $p, "    ", $variable, "[n] = new ", java_class($seq_type);
+  print $fp "(cons.elementAt(n), true);\n";
+  print $fp $p, "  }\n";
+  print $fp $p, "} catch (ClassCastException e) {\n";
+  print $fp $p, "  throw new ASN1EncodingException(\"Bad BER\");\n";
+  print $fp $p, "}\n";
+}
+
+sub java_ber_decode {
+  my($fp, $class_name, $def_ref) = @_;
+
+  # Comments
+
+  print $fp $COMMENT_LINE;
+
+  print $fp "/**\n";
+  print $fp " * Initializing object from a BER encoding.\n";
+  print $fp " * This method is for internal use only. You should use\n";
+  print $fp " * the constructor that takes a BEREncoding.\n";
+  print $fp " *\n";
+  print $fp " * \@param ber the BER to decode.\n";
+  print $fp " * \@param check_tag if the tag should be checked.\n";
+  print $fp " * \@exception ASN1Exception if the BER encoding is bad.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  # The code for the method
+
+  print $fp "public void\n";
+  print $fp "ber_decode(BEREncoding ber, boolean check_tag)\n";
+  print $fp "       throws ASN1Exception\n";
+  print $fp "{\n";
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: $class_name: decode: complex\n" if (defined($type_value1));
+
+  my $top_tag_unaltered = undef;
+  if ($def_ref->is_tagged()) {
+    # Code to check for matching of tag
+
+    my ($tag_class, $tag_num, $tag_explicit) = $def_ref->TAG_get();
+
+    print $fp "  // Check tag matches\n";
+    print $fp "\n";
+
+    print $fp "  if (check_tag) {\n";
+
+    print $fp "    if (ber.tag_get() != $tag_num ||\n";
+    print $fp "        ber.tag_type_get() != ";
+    print $fp "BEREncoding.", $tag_class, "_TAG) {\n";
+    print $fp "      throw new ASN1EncodingException\n";
+    print $fp "        (\"Zebulun: $class_name: bad BER:";
+    print $fp " tag=\" + ber.tag_get() + \" expected $tag_num\\n\");\n";
+    print $fp "    }\n";
+
+    print $fp "  }\n";
+    print $fp "\n";
+
+    if ($tag_explicit) {
+      # Need to unwrap type
+      
+      print $fp "  // Unwrap explicit tag\n";
+      print $fp "\n";
+      print $fp "  BERConstructed tagwrapper;\n";
+      print $fp "  try {\n";
+      print $fp "    tagwrapper = (BERConstructed) ber;\n";
+      print $fp "  } catch (ClassCastException e) {\n";
+      print $fp "    throw new ASN1EncodingException\n";
+      print $fp "      (\"Zebulun ", $class_name,": bad BER tag form\\n\");\n";
+      print $fp "  }\n";
+      print $fp "  if (tagwrapper.number_components() != 1) {\n";
+      print $fp "    throw new ASN1EncodingException\n";
+      print $fp "      (\"Zebulun ", $class_name,": bad BER tag form\\n\");\n";
+      print $fp "  }\n";
+      print $fp "  ber = tagwrapper.elementAt(0);\n";
+      print $fp "\n";
+      $top_tag_unaltered = 1;
+    } else {
+      $top_tag_unaltered = 0;
+    }
+  }
+
+  if ($type eq "SEQUENCE") {
+    # Code for decoding sequences
+
+    # It must be a constructed BER, so cast it into that type for manipulation.
+    # However, if it is not, catch the exception and change it into a BER
+    # encoding exception.
+
+    print $fp "  // $class_name should be encoded by a constructed BER\n";
+    print $fp "\n";
+
+    print $fp "  BERConstructed ber_cons;\n";
+    print $fp "  try {\n";
+    print $fp "    ber_cons = (BERConstructed) ber;\n";
+    print $fp "  } catch (ClassCastException e) {\n";
+    print $fp "    throw new ASN1EncodingException\n";
+    print $fp "      (\"Zebulun ", $class_name, ": bad BER form\\n\");\n";
+    print $fp "  }\n";
+    print $fp "\n";
+
+    # Get ready to process
+
+    print $fp "  // Prepare to decode the components\n";
+    print $fp "\n";
+    print $fp "  int num_parts = ber_cons.number_components();\n";
+    print $fp "  int part = 0;\n";
+    print $fp "  BEREncoding p;\n";
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence to have no components at all\n";
+    }
+
+    # Extra variable for decoding explicit tags
+
+    foreach (@elements) {
+      if ($_->is_tagged()) {
+	my($tag_class, $tag_num, $tag_explicit) = $_->TAG_get();
+
+	if ($tag_explicit) {
+	  print $fp "  BERConstructed tagged;\n";
+	  last;
+	}
+      }
+    }
+
+    print $fp "\n";
+
+    my $optionals_nulled_out = 0;
+
+    my $count = 0;
+    do {
+      $count++;
+
+      # Discover if the rest of the elements are optional
+
+      my $rest_are_optional = 1;
+      foreach(@elements) {
+	if (! $_->is_optional()) {
+	  $rest_are_optional = 0;
+	  last;
+	}
+      }
+
+      # If rest are optional, pre-initialize them so can return immendiately
+
+      if ($rest_are_optional && ! $optionals_nulled_out) {
+	print $fp "  // Remaining elements are optional, set variables\n";
+	print $fp "  // to null (not present) so can return at end of BER\n";
+	print $fp "\n";
+
+	my $sub_count = $count - 1;
+	foreach(@elements) {
+	  my $ename = $_->name_get();
+	  $sub_count++;
+	  print $fp "  ", seq_var_name($ename, $sub_count), " = null;\n";
+	}
+	
+	print $fp "\n";
+
+	$optionals_nulled_out = 1;
+      }
+      
+      # Code to extract the next part
+
+      my $element = shift(@elements);
+      my $ename = $element->name_get();
+      my $variable = seq_var_name($ename, $count);
+
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      if (defined($etype_value1)) {
+	die "$prog: $class_name: $variable: complex\n";
+      }
+
+      print $fp "  // Decoding: ", $element->toString();
+      print $fp "\n";
+      
+      # Getting the next part
+      print $fp "  if (num_parts <= part) {\n";
+      # what to do if there are no more parts
+      if ($rest_are_optional) {
+	print $fp "    return; // no more data, but ok (rest is optional)\n";
+      } else {
+	print $fp "    // End of record, but still more elements to get\n";
+	print $fp "    throw new ASN1Exception(\"Zebulun ", $class_name;
+	print $fp ": incomplete\");\n";
+      }
+      print $fp "  }\n";
+
+      print $fp "  p = ber_cons.elementAt(part);\n";
+      print $fp "\n";
+
+      # Processing it
+
+      if (! $element->is_optional()) {
+ 	# Code to extract mandatory type
+
+	if ($element->is_tagged()) {
+	  # It is tagged, so just check the tag
+
+	  my($tag_class, $tag_num, $tag_explicit) = $element->TAG_get();
+
+	  print $fp "  if (p.tag_get() != $tag_num ||\n";
+	  print $fp "      p.tag_type_get() != ";
+	  print $fp "BEREncoding.", $tag_class, "_TAG) {\n";
+	  print $fp "    throw new ASN1EncodingException\n";
+	  print $fp
+	    "      (\"Zebulun $class_name: bad tag in $variable\\n\");\n";
+	  print $fp "  }\n";
+	  print $fp "\n";
+
+	  if ($tag_explicit) {
+	    # Mandatory explicit tag
+
+	    print $fp "  try {\n";
+	    print $fp "    tagged = (BERConstructed) p;\n";
+	    print $fp "  } catch (ClassCastException e) {\n";
+	    print $fp "    throw new ASN1EncodingException\n";
+	    print $fp "      (\"Zebulun ", $class_name;
+	    print $fp ": bad BER encoding: $variable tag bad\\n\");\n";
+	    print $fp "  }\n";
+	  
+	    print $fp "  if (tagged.number_components() != 1) {\n";
+	    print $fp "    throw new ASN1EncodingException\n";
+	    print $fp "      (\"Zebulun ", $class_name;
+	    print $fp ": bad BER encoding: $variable tag bad\\n\");\n";
+	    print $fp "  }\n";
+	    print $fp "\n";
+
+	    if ($etype eq "SEQUENCE OF" ||
+		$etype eq "SET OF") {
+	      code_decode_sequence_of($fp, "  ",
+				      $variable, $etype_value,
+				      "tagged.elementAt(0)");
+	    } else {
+	      print $fp "  $variable = new ", java_class($etype);
+	      print $fp "(tagged.elementAt(0), true);\n";
+	    }
+
+	  } else {
+	    # Mandatory implicit tag
+	    if ($etype eq "SEQUENCE OF" ||
+		$etype eq "SET OF") {
+	      code_decode_sequence_of($fp, "  ", $variable, $etype_value, "p");
+	    } else {
+	      print $fp "  $variable = new ", java_class($etype);
+	      print $fp "(p, false);\n";
+	    }
+	  }
+	  print $fp "  part++;\n";
+	  
+	} else {
+	  # Mandatory not tagged, just extract it
+
+	  if ($etype eq "SEQUENCE OF" ||
+	      $etype eq "SET OF") {
+	    code_decode_sequence_of($fp, "  ", $variable, $etype_value, "p");
+	    print $fp "  part++;\n";
+	  } else {
+	    print $fp "  $variable = new ", java_class($etype), "(p, true);\n";
+	    print $fp "  part++;\n";
+	  }
+	}
+	
+      } else {
+	# Code to try and extract the optional type
+
+	if ($element->is_tagged()) {
+	  # It is tagged, so just check the tag
+
+	  my($tag_class, $tag_num, $tag_explicit) = $element->TAG_get();
+
+	  print $fp "  if (p.tag_get() == $tag_num &&\n";
+	  print $fp "      p.tag_type_get() ==";
+	  print $fp " BEREncoding.", $tag_class, "_TAG) {\n";
+
+	  if ($tag_explicit) {
+	    # Explicit tag optional
+
+	    print $fp "    try {\n";
+	    print $fp "      tagged = (BERConstructed) p;\n";
+	    print $fp "    } catch (ClassCastException e) {\n";
+	    print $fp "      throw new ASN1EncodingException\n";
+	    print $fp "        (\"Zebulun ", $class_name;
+	    print $fp ": bad BER encoding: $variable tag bad\\n\");\n";
+	    print $fp "    }\n";
+	  
+	    print $fp "    if (tagged.number_components() != 1) {\n";
+	    print $fp "      throw new ASN1EncodingException\n";
+	    print $fp "        (\"Zebulun ", $class_name;
+	    print $fp ": bad BER encoding: $variable tag bad\\n\");\n";
+	    print $fp "    }\n";
+	    print $fp "\n";
+	    
+	    if ($etype eq "SEQUENCE OF" ||
+		$etype eq "SET OF") {
+	      code_decode_sequence_of($fp, "  ",
+				      $variable, $etype_value,
+				      "tagged.elementAt(0)");
+	    } else {
+	      print $fp "    $variable = new ", java_class($etype);
+	    }
+
+	    print $fp "(tagged.elementAt(0), true);\n";
+
+	  } else {
+	    # Implicit tag
+	    if ($etype eq "SEQUENCE OF" ||
+		$etype eq "SET OF") {
+	      code_decode_sequence_of($fp, "    ", $variable,
+				      $etype_value, "p");
+	    } else {
+	      print $fp "    $variable = new ", java_class($etype);
+	      print $fp "(p, false);\n";
+	    }
+	  }
+	  print $fp "    part++;\n";
+	  print $fp "  }\n";
+	  
+
+	} else {
+	  # Optional but not tagged, only way to do it is to try and extract it
+
+	  print $fp "  try {\n";
+
+	  if ($etype eq "SEQUENCE OF" ||
+	      $etype eq "SET OF") {
+	    code_decode_sequence_of($fp, "    ", $variable, $etype_value, "p");
+	  } else {
+	    print $fp "    $variable = new ", java_class($etype);
+	    print $fp "(p, true);\n";
+	  }
+
+	  print $fp "    part++; // yes, consumed\n";
+	  print $fp "  } catch (ASN1Exception e) {\n";
+	  print $fp "    $variable = null; // no, not present\n";
+	  print $fp "  }\n";
+
+	}
+      }
+
+      print $fp "\n";
+
+    } while (0 <= $#elements);
+    
+    # There should not be any more parts, check for this
+
+    print $fp "  // Should not be any more parts\n";
+    print $fp "\n";
+    print $fp "  if (part < num_parts) {\n";
+    print $fp "    throw new ASN1Exception(\"Zebulun ", $class_name;
+    print $fp ": bad BER: extra data \" + part + \"/\" + num_parts + \" processed\");\n";
+    print $fp "  }\n";
+
+    # end sequence decoding
+
+  } elsif ($type eq "SEQUENCE OF" ||
+	   $type eq "SET OF") {
+    # Code for decoding SEQUENCE OF
+
+    # It must be a constructed BER, so cast it into that type for manipulation.
+    # However, if it is not, catch the exception and change it into a BER
+    # encoding exception.
+
+    print $fp "  // $class_name should be encoded by a constructed BER\n";
+    print $fp "\n";
+
+    print $fp "  BERConstructed ber_cons;\n";
+    print $fp "  try {\n";
+    print $fp "    ber_cons = (BERConstructed) ber;\n";
+    print $fp "  } catch (ClassCastException e) {\n";
+    print $fp "    throw new ASN1EncodingException\n";
+    print $fp "      (\"Zebulun ", $class_name, ": bad BER form\\n\");\n";
+    print $fp "  }\n";
+    print $fp "\n";
+
+    # Get ready to process
+
+    my $variable = var_name($def_ref->name_get());
+    print $fp "  // Prepare to decode the components\n";
+    print $fp "\n";
+    print $fp "  int num_parts = ber_cons.number_components();\n";
+    print $fp "  $variable = new ", $type_value, "[num_parts];\n";
+    print $fp "  int p;\n";
+
+    print $fp "  for (p = 0; p < num_parts; p++) {\n";
+    print $fp "    $variable\[p] = new ", java_class($type_value);
+    print $fp "(ber_cons.elementAt(p), true);\n";
+    print $fp "  }\n";
+
+    # end decoding SEQUENCE OF
+
+  } elsif ($type eq "CHOICE") {
+    # Code for decoding CHOICE
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: $class_name: choice has no components at all\n";
+    }
+
+    # Extra variable for decoding explicit tags
+
+    foreach (@elements) {
+      if ($_->is_tagged()) {
+	my($tag_class, $tag_num, $tag_explicit) = $_->TAG_get();
+
+	if ($tag_explicit) {
+	  print $fp "  BERConstructed tagwrapper;\n";
+	  print $fp "\n";
+	  last;
+	}
+      }
+    }
+
+    # Initialise by nulling out all fields
+
+    print $fp "  // Null out all choices\n";
+    print $fp "\n";
+
+    my $count = 0;
+    foreach(@elements) {
+      $count++;
+      print $fp "  ", choice_var_name($_->name_get(), $count), " = null;\n";
+    }
+    print $fp "\n";
+
+    # Try to extract element, test in order
+
+    my $have_cons_variable = 0;
+
+    $count = 0;
+    foreach(@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      $count++;
+
+      if (defined($ename)) {
+	print $fp "  // Try choice $ename\n";
+      } else {
+	print $fp "  // Try choice number $count\n";
+      }
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	# Choice element is a SEQUENCE OF or SET OF
+
+	die "$prog: $class_name: decoding CHOICE: $ename is $etype: complex\n"
+	  if (defined($etype_value1));
+
+	if ($element->is_tagged()) {
+	  # Tagged, can try to match tags first
+
+	  my($etag_class, $etag_num, $etag_explicit) = $element->TAG_get();
+
+	  print $fp "  if (ber.tag_get() == $etag_num &&\n";
+	  print $fp "      ber.tag_type_get() == ";
+	  print $fp "BEREncoding.", $etag_class, "_TAG) {\n";
+
+	  print $fp "    BEREncoding ber_data;\n";
+
+	  if ($etag_explicit) {
+	    # Explicit, need to unwrap
+
+	    print $fp "    try {\n";
+	    print $fp "      tagwrapper = (BERConstructed) ber;\n";
+	    print $fp "    } catch (ClassCastException e) {\n";
+	    print $fp "      throw new ASN1EncodingException\n";
+	    print $fp "        (\"Zebulun ", $class_name, ": bad BER form\\n\");\n";
+	    print $fp "    }\n";
+
+	    print $fp "    if (tagwrapper.number_components() != 1) {\n";
+	    print $fp "      throw new ASN1EncodingException\n";
+	    print $fp "        (\"Zebulun ", $class_name, ": bad BER form\\n\");\n";
+	    print $fp "    }\n";
+
+	    print $fp "    ber_data = tagwrapper.elementAt(0);\n";
+
+	  } else {
+	    # Implicit
+	    print $fp "    ber_data = ber;\n";
+	  }
+
+	  print $fp "    BERConstructed ber_cons;\n";
+	  print $fp "    try {\n";
+	  print $fp "      ber_cons = (BERConstructed) ber_data;\n";
+	  print $fp "    } catch (ClassCastException e) {\n";
+	  print $fp "      throw new ASN1EncodingException\n";
+	  print $fp "        (\"Zebulun ", $class_name, ": bad BER form\\n\");\n";
+	  print $fp "    }\n";
+	  print $fp "\n";
+
+	  print $fp "    int num_parts = ber_cons.number_components();\n";
+	  print $fp "    int p;\n";
+	  print $fp "\n";
+
+	  print $fp "    ", choice_var_name($ename, $count);
+	  print $fp " = new ", java_class($etype_value);
+	  print $fp "[num_parts];\n";
+	  print $fp "\n";
+
+	  print $fp "    for (p = 0; p < num_parts; p++) {\n";
+	  print $fp "      ", choice_var_name($ename, $count);
+	  print $fp "[p] = new ", java_class($etype_value);
+	  print $fp "(ber_cons.elementAt(p), true);\n";
+	  print $fp "    }\n";
+	  print $fp "    return;\n";
+	  print $fp "  }\n";
+	  print $fp "\n";
+
+	} else {
+	  # Not tagged, only one way to find out: try it
+
+	  if (! $have_cons_variable) {
+	    print $fp "  BERConstructed ber_cons;\n";
+	    $have_cons_variable = 1;
+	  }
+
+	  print $fp "  try {\n";
+	  print $fp "    ber_cons = (BERConstructed) ber;\n";
+	  print $fp "\n";
+
+	  print $fp "    int num_parts = ber_cons.number_components();\n";
+	  print $fp "    int p;\n";
+	  print $fp "\n";
+
+	  print $fp "    ", choice_var_name($ename, $count);
+	  print $fp " = new ", java_class($etype_value);
+	  print $fp "[num_parts];\n";
+	  print $fp "\n";
+
+	  print $fp "    for (p = 0; p < num_parts; p++)\n";
+	  print $fp "      ", choice_var_name($ename, $count);
+	  print $fp "[p] = new ", java_class($etype_value);
+	  print $fp "(ber_cons.elementAt(p), check_tag);\n";
+	  print $fp "\n";
+	  print $fp "  } catch (ClassCastException e) {\n";
+	  print $fp "    // failed to decode, continue on\n";
+	  print $fp "  } catch (ASN1Exception e) {\n";
+	  print $fp "    // failed to decode, continue on\n";
+	  print $fp "  }\n";
+	}
+      
+      } else {
+	# Choice element is not a SEQUENCE OF, must be simple type
+
+	if ($etype ne "INTEGER") {
+	  die "$prog: $class_name: decode CHOICE: $ename is $etype: unsupp?\n"
+	    if (defined($etype_value));
+	}
+	die "$prog: $class_name: decode CHOICE: $ename is $etype: complex b\n"
+	  if (defined($etype_value1));
+
+	if ($element->is_tagged()) {
+	  # Tagged, can try to match tags first, if the tag matches
+	  # the it must succeed, there is no going back (this is
+	  # good so that we can propogate more meaningful exceptions
+	  # from lower levels rather than catching them and discarding them.
+
+	  my($etag_class, $etag_num, $etag_explicit) = $element->TAG_get();
+
+	  print $fp "  if (ber.tag_get() == $etag_num &&\n";
+	  print $fp "      ber.tag_type_get() == ";
+	  print $fp "BEREncoding.", $etag_class, "_TAG) {\n";
+
+	  if ($etag_explicit) {
+	    # explicit tag, must extract contents
+	    print $fp "    try {\n";
+	    print $fp "      tagwrapper = (BERConstructed) ber;\n";
+	    print $fp "    } catch (ClassCastException e) {\n";
+	    print $fp "      throw new ASN1EncodingException\n";
+	    print $fp "        (\"Zebulun ", $class_name, ": bad BER form\\n\");\n";
+	    print $fp "    }\n";
+	    print $fp "    if (tagwrapper.number_components() != 1)\n";
+	    print $fp "      throw new ASN1EncodingException\n";
+	    print $fp "        (\"Zebulun ", $class_name, ": bad BER form\\n\");\n"; 
+
+	    print $fp "    ", choice_var_name($ename, $count);
+	    print $fp " = new ", java_class($etype), "(tagwrapper.elementAt(0), true);\n";
+	  } else {
+	    # implicit tag
+	    print $fp "    ", choice_var_name($ename, $count);
+	    print $fp " = new ", java_class($etype), "(ber, false);\n";
+	  }
+
+	  print $fp "    return;\n";
+	  print $fp "  }\n";
+	  print $fp "\n";
+
+	} else {
+	  # Not tagged, only one way to find out: try it
+	  
+	  print $fp "  try {\n";
+	  print $fp "    ", choice_var_name($ename, $count);
+	  print $fp " = new ", java_class($etype), "(ber, check_tag);\n";
+	  print $fp "    return;\n";
+	  print $fp "  } catch (ASN1Exception e) {\n";
+	  print $fp "    // failed to decode, continue on\n";
+	  print $fp "  }\n";
+	  print $fp "\n";
+	}
+      }
+    }
+
+    print $fp "  throw new ASN1Exception(\"Zebulun $class_name: ";
+    print $fp "bad BER encoding: choice not matched\");\n";
+
+    # end choice decoding
+
+  } else {
+    # Other types
+
+    my $variable = var_name($def_ref->name_get());
+
+    if (! defined($top_tag_unaltered)) {
+      print $fp "  $variable = new ", java_class($type), "(ber, check_tag);\n";
+    } elsif ($top_tag_unaltered) {
+      print $fp "  $variable = new ", java_class($type), "(ber, true);\n";
+    } else {
+      print $fp "  $variable = new ", java_class($type), "(ber, false);\n";
+    }
+  }
+
+  print $fp "}\n";
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+
+sub java_ber_encode {
+  my($fp, $class_name, $def_ref, $root_hier) = @_;
+
+  # Six cases
+  # Type                      ber_encode()  ber_encode(imp_class, imp_tag)
+  # Non-choice untagged         call ->            implemented
+  # Non-choice implicit tag     call ->            implemented
+  # Non-choice explicit tag     call ->            implemented
+  # choice untagged             implemented        not possible
+  # choice implicit tag         not possible       not possible
+  # choice explicit tag         call ->            implemented
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error: encoding complex\n" if (defined($type_value1));
+
+  if ($type ne "CHOICE") {
+    # Not a CHOICE
+    java_ber_encode_nonchoice($fp, $class_name, $def_ref, $root_hier);
+    
+  } else {
+    # Is a CHOICE
+    java_ber_encode_choice($fp, $class_name, $def_ref, $root_hier);
+  }
+}
+
+#----------------
+
+sub java_ber_encode_nonchoice {
+  my($fp, $class_name, $def_ref, $root_hier) = @_;
+
+  # Comments for method without any extra tagging
+
+  print $fp $COMMENT_LINE;
+
+  print $fp "/**\n";
+  print $fp " * Returns a BER encoding of the $class_name.\n";
+  print $fp " *\n";
+  print $fp " * \@exception	ASN1Exception Invalid or cannot be encoded.\n";
+  print $fp " * \@return	The BER encoding.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  # The code for the method without any extra tagging
+
+  print $fp "public BEREncoding\n";
+  print $fp "ber_encode()\n";
+  print $fp "       throws ASN1Exception\n";
+  print $fp "{\n";
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error: encoding complex\n" if (defined($type_value1));
+
+  # Use the implicitly tagged encoding routine
+
+  if ($def_ref->is_tagged()) {
+    my ($tag_class, $tag_num, $tag_explicit) = $def_ref->TAG_get();
+
+    print $fp "  return ber_encode(BEREncoding.", $tag_class, "_TAG, ";
+    print $fp "$tag_num);\n";
+
+  } else {
+    # Not tagged
+
+    if ($type eq "SEQUENCE" ||
+	$type eq "SEQUENCE OF") {
+      print $fp "  return ber_encode(BEREncoding.UNIVERSAL_TAG, ";
+      print $fp "ASN1Sequence.TAG);\n";
+
+    } elsif ($type eq "SET OF") {
+      print $fp "  return ber_encode(BEREncoding.UNIVERSAL_TAG, ";
+      print $fp "ASN1Set.TAG);\n";
+    } else {
+      print $fp "  return value.ber_encode();\n";
+    }
+  }
+
+  print $fp "}\n";
+  print $fp "\n";
+
+  #----------------
+  # Code for method with extra tagging
+
+  print $fp $COMMENT_LINE;
+  
+  print $fp "/**\n";
+  print $fp " * Returns a BER encoding of $class_name, implicitly tagged.\n";
+  print $fp " *\n";
+  print $fp " * \@param tag_type	The type of the implicit tag.\n";
+  print $fp " * \@param tag	The implicit tag.\n";
+  print $fp " * \@return	The BER encoding of the object.\n";
+  print $fp " * \@exception	ASN1Exception When invalid or cannot be encoded.\n";
+  print $fp "\n";
+  print $fp " * \@see $root_hier.asn1.BEREncoding#UNIVERSAL_TAG\n";
+  print $fp " * \@see $root_hier.asn1.BEREncoding#APPLICATION_TAG\n";
+  print $fp " * \@see $root_hier.asn1.BEREncoding#CONTEXT_SPECIFIC_TAG\n";
+  print $fp " * \@see $root_hier.asn1.BEREncoding#PRIVATE_TAG\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  ($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error: encoding complex\n" if (defined($type_value1));
+
+  if ($type eq "SEQUENCE") {
+    # Code for encoding sequences
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence to have no components at all\n";
+    }
+
+    print $fp "public BEREncoding\n";
+    print $fp "ber_encode(int tag_type, int tag)\n";
+    print $fp "       throws ASN1Exception\n";
+    print $fp "{\n";
+
+    # Code to determine number of fields
+
+    # Count how many mandatory elements there are
+
+    my $num_mandatory = 0;
+    foreach (@elements) {
+      if (! $_->is_optional()) {
+	$num_mandatory++;
+      }
+    }
+
+    print $fp "  // Calculate the number of fields in the encoding\n";
+    print $fp "\n";
+    print $fp "  int num_fields = $num_mandatory; // number of mandatories\n";
+
+    my $count = 0;
+    foreach (@elements) {
+      $count++;
+      if ($_->is_optional()) {
+	print $fp "  if (", seq_var_name($_->name_get(), $count)," != null)\n";
+	print $fp "    num_fields++;\n";
+      }
+    }
+
+    # Code to encode fields
+
+    print $fp "\n";
+    print $fp "  // Encode it\n";
+    print $fp "\n";
+    print $fp "  BEREncoding[] fields = new BEREncoding[num_fields];\n";
+    print $fp "  int x = 0;\n";
+
+    # Extra variables for encoding SEQUENCE OF
+
+    foreach (@elements) {
+      my($etype, $etype_value, $etype_value1) = $_->type_get();
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "  BEREncoding[] f2;\n";
+	print $fp "  int p;\n";
+	last;
+      }
+    }
+
+    # Extra variable for encoding explicit tags
+
+    foreach (@elements) {
+      if ($_->is_tagged()) {
+	my($tag_class, $tag_num, $tag_explicit) = $_->TAG_get();
+
+	if ($tag_explicit) {
+	  print $fp "  BEREncoding[] enc;\n";
+	  last;
+	}
+      }
+    }
+
+    print $fp "\n";
+
+    $count = 0;
+    foreach (@elements) {
+      my $element = $_;
+      my $opt = $element->is_optional();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      $count++;
+      my $variable = seq_var_name($element->name_get(), $count);
+
+      if ($opt) {
+	print $fp "  // Encoding $variable: $etype OPTIONAL\n";
+	print $fp "\n";
+	print $fp "  if ($variable != null) {\n";
+
+      } else {
+	print $fp "  // Encoding $variable: $etype \n";
+	print $fp "\n";
+      }
+
+      if ($element->is_tagged()) {
+	my($tag_class, $tag_num, $tag_explicit) = $element->TAG_get();
+
+	if (! $tag_explicit) {
+	  # Implicit tag
+
+	  if ($etype eq "SEQUENCE OF" ||
+	      $etype eq "SET OF") {
+	    # Implicit tag SEQUENCE OF
+
+	    print $fp "    f2 = new BEREncoding[$variable\.length];\n";
+	    print $fp "\n";
+	    print $fp "    for (p = 0; p < $variable\.length; p\++) {\n";
+	    print $fp "      f2[p] = $variable\[p].ber_encode();\n";
+	    print $fp "    }\n";
+	    print $fp "\n";
+	    print $fp "    fields[x++] = new BERConstructed";
+	    print $fp "(BEREncoding.", $tag_class, "_TAG, $tag_num, f2);\n";
+
+	  } else {
+	    # Implicit tag ordinary type
+
+	    print $fp "  " if ($opt);
+	    print $fp "  fields[x++] = ";
+	    print $fp "$variable\.ber_encode(BEREncoding.", $tag_class, "_TAG, $tag_num);\n";
+	  }
+
+	} else {
+	  # Explicit tag
+
+	  if ($etype eq "SEQUENCE OF" ||
+	      $etype eq "SET OF") {
+	    # Explicit tag SEQUENCE OF or SET OF
+
+	    print $fp "  " if ($opt);
+	    print $fp "  enc = new BEREncoding[1];\n";
+
+	    print $fp "  f2 = new BEREncoding[$variable\.length];\n";
+	    print $fp "\n";
+	    print $fp "  for (p = 0; p < $variable\.length; p\++) {\n";
+	    print $fp "    f2[p] = $variable\[p].ber_encode();\n";
+	    print $fp "  }\n";
+	    print $fp "\n";
+
+	    print $fp "  enc[0] = new BERConstructed";
+	    print $fp "(BEREncoding.UNIVERSAL_TAG, ";
+	    if ($etype eq "SEQUENCE OF") {
+	      print $fp "ASN1Sequence.TAG";
+	    } else {
+	      print $fp "ASN1Set.TAG";
+	    }
+	    print $fp ", f2);\n";
+
+	    print $fp "  fields[x++] = new BERConstructed(";
+	    print $fp "BEREncoding.", $tag_class, "_TAG, $tag_num, enc);\n";
+	  } else {
+	    # Explicit tag ordinary type
+
+	    print $fp "  " if ($opt);
+	    print $fp "  enc = new BEREncoding[1];\n";
+	    print $fp "  " if ($opt);
+	    print $fp "  enc[0] = $variable\.ber_encode();\n";
+	    print $fp "  " if ($opt);
+	    print $fp "  fields[x++] = new BERConstructed(";
+	    print $fp "BEREncoding.", $tag_class, "_TAG, $tag_num, enc);\n";
+
+	  }
+	}
+
+      } else {
+	# No tag
+
+	if ($etype eq "SEQUENCE OF" ||
+	    $etype eq "SET OF") {
+	    # No tag SEQUENCE OF
+
+	    print $fp "    f2 = new BEREncoding[$variable\.length];\n";
+	    print $fp "\n";
+	    print $fp "    for (p = 0; p < $variable\.length; p++) {\n";
+	    print $fp "      f2[p] = $variable\[p].ber_encode();\n";
+	    print $fp "    }\n";
+	    print $fp "\n";
+	    print $fp "    fields[x++] = new BERConstructed";
+
+	    print $fp "(BEREncoding.UNIVERSAL_TAG, ";
+	    print $fp ($etype eq "SEQUENCE OF") ? "ASN1Sequence.TAG" : "ASN1Set.TAG";
+	    print $fp ", f2);\n";
+	} else {
+	  # No tag ordinary type
+
+	  print $fp "  " if ($opt);
+	  print $fp "  fields[x++] = $variable\.ber_encode();\n";
+	}
+      }
+
+      if ($opt) {
+	print $fp "  }\n";
+      }
+
+      print $fp "\n";
+    }
+
+    print $fp "  return new BERConstructed(tag_type, tag, fields);\n";
+    print $fp "}\n";
+    print $fp "\n";
+
+    # end sequence encoding
+
+  } elsif ($type eq "SEQUENCE OF") {
+    # Code for encoding SEQUENCE OF
+
+    print $fp "public BEREncoding\n";
+    print $fp "ber_encode(int tag_type, int tag)\n";
+    print $fp "       throws ASN1Exception\n";
+    print $fp "{\n";
+
+    my $variable = var_name($def_ref->name_get());
+
+    print $fp "  BEREncoding[] fields = ";
+    print $fp "new BERConstructed[$variable\.length];\n";
+    print $fp "  int p;\n";
+    print $fp "\n";
+    print $fp "  for (p = 0; p < $variable\.length; p++) {\n";
+    print $fp "    fields[p] = $variable\[p].ber_encode();\n";
+    print $fp "  }\n";
+    print $fp "\n";
+    print $fp "  return new BERConstructed(tag_type, tag, fields);\n";
+    print $fp "}\n";
+    print $fp "\n";
+
+  } else {
+    # Simple type encoding
+
+    print $fp "public BEREncoding\n";
+    print $fp "ber_encode(int tag_type, int tag)\n";
+    print $fp "       throws ASN1Exception\n";
+    print $fp "{\n";
+
+    if (defined($type_value1)) {
+      die "$prog: $class_name: encoding: internal error\n";
+    }
+
+    my $variable = var_name($def_ref->name_get());
+
+    if ($def_ref->is_tagged()) {
+      my($tag_class, $tag_num, $tag_explicit) = $def_ref->TAG_get();
+
+      if (! $tag_explicit) {
+	# Implicit tag of simple type, but tagging overrides
+
+	print $fp "    return $variable.ber_encode(tag_type, tag);\n";
+      } else {
+	# Explicit tag of simple type, but tagging overrides
+
+	print $fp "    BEREncoding enc[] = new BEREncoding[1];\n";
+	print $fp "    enc[0] = $variable.ber_encode();\n";
+	print $fp "    return new BERConstructed(tag_type, tag, enc);\n";
+      }
+
+    } else {
+      # Untagged simple type, but tagging overrides
+      print $fp "  return $variable.ber_encode(tag_type, tag);\n";
+    }
+
+    print $fp "}\n";
+    print $fp "\n";
+
+    # end of simple type encoding
+  }
+}
+
+#----------------
+
+sub java_ber_encode_choice {
+  my($fp, $class_name, $def_ref, $root_hier) = @_;
+
+  my $has_tag_version;
+
+  if ($def_ref->is_tagged()) {
+    my($tag_class, $tag_num, $tag_explicit) = $def_ref->TAG_get();
+
+    if (! $tag_explicit) {
+      # Implicit tag on CHOICE - should not occur
+      die "$prog: implicitly tagged choice cannot occur: $class_name\n";
+    } else {
+      # Explicit tag on CHOICE
+      $has_tag_version = 1;
+      }
+    } else {
+      # No tag on CHOICE
+      $has_tag_version = 0;
+    }
+
+  # Comments for method without any extra tagging
+
+  print $fp $COMMENT_LINE;
+
+  print $fp "/**\n";
+  print $fp " * Returns a BER encoding of $class_name.\n";
+  print $fp " *\n";
+  print $fp " * \@return	The BER encoding.\n";
+  print $fp " * \@exception	ASN1Exception Invalid or cannot be encoded.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  # The code for the method without extra tagging
+
+  print $fp "public BEREncoding\n";
+  print $fp "ber_encode()\n";
+  print $fp "       throws ASN1Exception\n";
+  print $fp "{\n";
+  
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error: encoding complex\n" if (defined($type_value1));
+
+  if ($has_tag_version) {
+    # Then this just calls the implicit tagged method with the (default)
+    # explicit tag value.
+
+    my($tag_class, $tag_num, $tag_explicit) = $def_ref->TAG_get();
+
+    print $fp "  return ber_encode(BEREncoding.", $tag_class, "_TAG, $tag_num);\n";
+
+    print $fp "}\n";
+    print $fp "\n";
+
+    # Start implicit tagged method
+
+    print $fp $COMMENT_LINE;
+    
+    print $fp "/**\n";
+    print $fp " * Returns a BER encoding of $class_name, implicitly tagged.\n";
+    print $fp " *\n";
+    print $fp " * \@return	The BER encoding of the object.\n";
+    print $fp " * \@exception	ASN1Exception When invalid or cannot be encoded.\n";
+    print $fp " */\n";
+    print $fp "\n";
+
+    my($type, $type_value, $type_value1) = $def_ref->type_get();
+    die "$prog: internal error: encoding complex\n" if (defined($type_value1));
+
+    print $fp "public BEREncoding\n";
+    print $fp "ber_encode(int tag_type, int tag)\n";
+    print $fp "       throws ASN1Exception\n";
+    print $fp "{\n";
+  }
+
+  # Code for encoding CHOICE (this is either the body of either version
+  # of ber_encoding depending on $has_tag_version above.
+
+  my(@elements) = @$type_value;
+  if ($#elements < 0) {
+    die "$prog: $class_name: choice has no components at all\n";
+  }
+
+  # Variable to hold the encoded CHOICE element
+
+  print $fp "  BEREncoding chosen = null;\n";
+  print $fp "\n";
+
+  # If any of the CHOICEs are SEQUENCE OF types, extra variables for them
+
+  foreach (@elements) {
+    my($etype, $etype_value, $etype_value1) = $_->type_get();
+    if ($etype eq "SEQUENCE OF" ||
+	$etype eq "SET OF") {
+      print $fp "  BEREncoding f2[];\n";
+      print $fp "  int p;\n";
+      last;
+    }
+  }
+
+  # Extra variable for encoding explicit tags of CHOICEs 
+
+  foreach (@elements) {
+    if ($_->is_tagged()) {
+      my($tag_class, $tag_num, $tag_explicit) = $_->TAG_get();
+
+      if ($tag_explicit) {
+	print $fp "  BEREncoding enc[];\n";
+	print $fp "\n";
+	last;
+      }
+    }
+  }
+
+  # Code to encode the first field that is set and to bypass rest
+
+  my $count = 0;
+  my $first = 1;
+  foreach (@elements) {
+    my $element = $_;
+    my $ename = $element->name_get();
+    my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+    $count++;
+    my $variable = choice_var_name($ename, $count);
+
+    print $fp "  // Encoding choice: $variable\n";
+    print $fp "  if ($variable != null) {\n";
+
+    # Code to detect multiply set choices (bad usage)
+
+    if (! $first) {
+      print $fp "    if (chosen != null)\n";
+      print $fp "      throw new ASN1Exception(\"CHOICE multiply set\");\n";
+    }
+    $first = 0; # no longer first element
+
+    # Code to encode the chosen choice
+
+    if ($element->is_tagged()) {
+      my($tag_class, $tag_num, $tag_explicit) = $element->TAG_get();
+
+      if (! $tag_explicit) {
+	# Implicit tag
+
+	if ($etype eq "SEQUENCE OF" ||
+	    $etype eq "SET OF") {
+	  # Implicit tagged SEQUENCE OF of SET OF
+
+	  print $fp "    f2 = new BEREncoding[$variable\.length];\n";
+	  print $fp "\n";
+	  print $fp "    for (p = 0; p < $variable\.length; p++) {\n";
+	  print $fp "      f2[p] = $variable\[p].ber_encode();\n";
+	  print $fp "    }\n";
+	  print $fp "\n";
+	  print $fp "    chosen = new BERConstructed";
+	  print $fp "(BEREncoding.", $tag_class, "_TAG, $tag_num, f2);\n";
+	} else {
+	  # Implicit tagged ordinary type
+	  print $fp "    chosen = $variable.ber_encode(BEREncoding.", $tag_class, "_TAG, $tag_num);\n";
+	}
+
+      } else {
+ 	# Explicit tag
+
+	if ($etype eq "SEQUENCE OF" ||
+	    $etype eq "SET OF") {
+	  # Explicit tagged SEQUENCE OF or SET OF
+
+	  print $fp "  enc = new BEREncoding[1];\n";
+
+	  print $fp "  f2 = new BEREncoding[$variable\.length];\n";
+	  print $fp "\n";
+	  print $fp "  for (p = 0; p < $variable\.length; p++) {\n";
+	  print $fp "    f2[p] = $variable\[p].ber_encode();\n";
+	  print $fp "  }\n";
+	  print $fp "\n";
+	  
+	  print $fp "    enc[0] = new BERConstructed";
+	  print $fp "(BEREncoding.UNIVERSAL_TAG, ";
+	  if ($etype eq "SEQUENCE OF") {
+	    print $fp "ASN1Sequence.TAG";
+	  } else {
+	    print $fp "ASN1Set.TAG";
+	  }
+	  print $fp ", f2);\n";
+	  
+	  print $fp "    chosen = new BERConstructed(";
+ 	  print $fp "BEREncoding.", $tag_class, "_TAG, $tag_num, enc);\n";
+	} else {
+	  # Explicit tagged ordinary type
+
+	  print $fp "    enc = new BEREncoding[1];\n";
+	  print $fp "    enc[0] = $variable.ber_encode();\n";
+	  print $fp "    chosen = new BERConstructed(";
+	  print $fp "BEREncoding.", $tag_class, "_TAG, $tag_num, enc);\n";
+	}
+
+      }
+
+    } else {
+      # No tag
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	# No tag SEQUENCE OF
+
+	print $fp "    BEREncoding f2[] = ";
+	print $fp "new BERConstructed[$variable\.length];\n";
+	print $fp "    int p;\n";
+	print $fp "\n";
+	print $fp "    for (p = 0; p < $variable\.length; p++) {\n";
+	print $fp "      f2[p] = $variable\[p].ber_encode();\n";
+	print $fp "    }\n";
+	print $fp "\n";
+	print $fp "    chosen = new BERConstructed";
+
+	print $fp "(BEREncoding.UNIVERSAL_TAG, ";
+	print $fp ($etype eq "SEQUENCE OF") ? "ASN1Sequence.TAG" : "ASN1Set.TAG";
+	print $fp ", f2);\n";
+
+      } else {
+	# No tag ordinary type
+
+	print $fp "  chosen = $variable.ber_encode();\n";
+      }
+    }
+
+    print $fp "  }\n";
+    print $fp "\n";
+  }
+
+  print $fp "  // Check for error of having none of the choices set\n";
+  print $fp "  if (chosen == null) {\n";
+  print $fp "    throw new ASN1Exception(\"CHOICE not set\");\n";
+  print $fp "  }\n";
+  print $fp "\n";
+
+  # Finish up method
+
+  if (! $has_tag_version) {
+    # Untagged CHOICE
+    print $fp "  return chosen;\n";
+    print $fp "}\n";
+    print $fp "\n";
+
+    print $fp $COMMENT_LINE;
+    print $fp "\n";
+
+    # Implement a dummy method which should not be called (it always generates
+    # an exception) because this is not allowable. Must do this, otherwise
+    # the ASN1Any.ber_encode(,) method will be used instead, leading to 
+    # great confusion about the real cause of the error (because it will fail).
+
+    print $fp "/**\n";
+    print $fp " * Generating a BER encoding of the object\n";
+    print $fp " * and implicitly tagging it.\n";
+    print $fp " * <p>\n";
+    print $fp " * This method is for internal use only. You should use\n";
+    print $fp " * the ber_encode method that does not take a parameter.\n";
+    print $fp " * <p>\n";
+    print $fp " * This function should never be used, because this\n";
+    print $fp " * production is a CHOICE.\n";
+    print $fp " * It must never have an implicit tag.\n";
+    print $fp " * <p>\n";
+    print $fp " * An exception will be thrown if it is called.\n";
+    print $fp " *\n";
+    print $fp " * \@param tag_type the type of the tag.\n";
+    print $fp " * \@param tag the tag.\n";
+    print $fp " * \@exception ASN1Exception if it cannot be BER encoded.\n";
+    print $fp " */\n";
+    print $fp "\n";
+
+    print $fp "public BEREncoding\n";
+    print $fp "ber_encode(int tag_type, int tag)\n";
+    print $fp "       throws ASN1Exception\n";
+    print $fp "{\n";
+    print $fp "  // This method must not be called!\n";
+    print $fp "\n";
+    print $fp "  // Method is not available because this is a basic CHOICE\n";
+    print $fp "  // which does not have an explicit tag on it. So it is not\n";
+    print $fp "  // permitted to allow something else to apply an implicit\n";
+    print $fp "  // tag on it, otherwise the tag identifying which CHOICE\n";
+    print $fp "  // it is will be overwritten and lost.\n";
+    print $fp "\n";
+    print $fp "  throw new ASN1EncodingException(\"Zebulun $class_name: cannot implicitly tag\");\n";
+    print $fp "}\n";
+    print $fp "\n";
+
+  } else {
+    # Explicitly tagged CHOICE
+
+    # Return the choice with explicit tag around it
+
+    print $fp "  // Return chosen element wrapped in its explicit tag\n";
+    print $fp "\n";
+    print $fp "  BEREncoding exp_tag_data[] = new BEREncoding[1];\n";
+    print $fp "  exp_tag_data[0] = chosen;\n";
+    print $fp "  return new BERConstructed(tag_type, tag, exp_tag_data);\n";
+    print $fp "}\n";
+    print $fp "\n";
+  }
+}
+
+#----------------------------------------------------------------
+
+sub java_xer_encode {
+  # Generate the Java implementation of xer_encode.
+
+  my($fp, $class_name, $def_ref) = @_;
+
+  print $fp $DOUBLE_COMMENT_LINE;
+  print $fp "// Experimental XER (XML Encoding Rules) code\n";
+  print $fp "\n";
+
+  print $fp $COMMENT_LINE;
+  print $fp "/**\n";
+  print $fp " * Produces the XER encoding of a $class_name object\n";
+  print $fp " * using the default tag name.\n";
+  print $fp " * <p>\n";
+  print $fp " * <em>\n";
+  print $fp " * This function is experimental, and is only provided\n";
+  print $fp " * for evaluation only.  It is provided on an \"as is\" basis.\n";
+  print $fp " * There is no guarantee that it will be available\n";
+  print $fp " * in future releases.\n";
+  print $fp " * </em>\n";
+  print $fp " *\n";
+  print $fp " * \@param dest the destination for the XER encoding.\n";
+  print $fp " * \@exception ASN1Exception if the data is invalid.\n";
+  print $fp " */\n";
+  print $fp "\n";
+  print $fp "public void\n";
+  print $fp "xer_encode(java.io.PrintWriter dest)\n";
+  print $fp "  throws ASN1Exception\n";
+  print $fp "{\n";
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error\n" if (defined($type_value1));
+
+  if ($type eq "SEQUENCE") {
+    # Code for XER encoding sequences
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence has no components at all\n";
+    }
+
+    # Extra variable if there are any SEQUENCE OF to process
+
+    foreach (@elements) {
+      my($etype, $etype_value, $etype_value1) = $_->type_get();
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "  int p;\n";
+	print $fp "\n";
+	last;
+      }
+    }
+
+    # Determine unique names for each element in the sequence
+
+    my @unique_names;
+
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      my $name_of_element = undef;
+
+      if (defined($ename)) {
+	# Has name, try to use it
+
+	foreach (@unique_names) {
+	  if ($_ eq $ename) {
+	    # Name already used
+	    print STDERR "Warning: XER code: Non-unique sequence name for $class_name: $ename\n";
+	  }
+	}
+	$name_of_element = $ename;
+      }
+
+      if (! defined($name_of_element)) {
+	# No name, try to use tag number etc ???
+
+	if ($element->is_tagged()) {
+	  my($tag_class, $tag_num, $tag_explicit) = $element->TAG_get();
+	  
+	  my $name_of_element = "Tag" . $tag_num;
+
+	  foreach (@unique_names) {
+	    if ($_ eq $name_of_element) {
+	      print STDERR "Warning: XER code: Non-unique sequence id for $class_name: $new_name\n";
+	    }
+	  }
+	}
+      }
+
+      if (! defined($name_of_element)) {
+	# Still no suitable name, generate one based on "Name"
+
+	my $count = 1;
+	my $is_unique;
+
+	do {
+	  $name_of_element = "Name" . $count;
+	  $is_unique = 1;
+
+	  foreach (@unique_names) {
+	    if ($_ eq $name_of_element) {
+	      $is_unique = 0;
+	      last;
+	    }
+	  }
+	  $count++;
+	} while (! $is_unique);
+      }
+
+      push(@unique_names, $name_of_element);
+    }
+
+    # Generate code for converting each element of a sequence to XER
+
+    my $count = 0;
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      my $xml_tag_name = $unique_names[$count];
+
+      $count++;
+
+      my $opt = $element->is_optional();
+      my $indent = "";
+      if ($opt) {
+	$indent = "  ";
+      }
+
+      if ($opt) {
+	print $fp $indent, "if (", seq_var_name($ename, $count), " != null) {\n";
+      }      
+
+      print $fp "$indent  dest.print(\"<$xml_tag_name>\");\n";
+
+      my $variable = seq_var_name($ename, $count);
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	# Output SEQUENCE OF or SET OF
+
+	print $fp "$indent  for (p = 0; p < $variable\.length; p++) {\n";
+	print $fp "$indent    dest.print(\"<xer:Item>\");\n";
+	print $fp "$indent    $variable\[p].xer_encode(dest);\n";
+	print $fp "$indent    dest.print(\"</xer:Item>\");\n";
+	print $fp "$indent  }\n";
+
+      } else {
+	# Output ordinary variable
+	print $fp "$indent  ", $variable, ".xer_encode(dest);\n";
+      }
+
+      print $fp $indent, "  dest.print(\"</$xml_tag_name>\");\n";
+
+      if ($opt) {
+	print $fp $indent, "}\n";
+      }
+      print $fp "\n";
+    }
+
+    # end SEQUENCE xer_encode
+
+  } elsif ($type eq "SEQUENCE OF") {
+    # Code for encoding SEQUENCE OF
+
+    my $name = $def_ref->name_get();
+    my $variable = var_name($name);
+
+    print $fp "  int p;\n";
+    print $fp "\n";
+
+    if (defined($name)) {
+      print $fp "  dest.print(\"<$name>\");\n";
+    }
+
+    print $fp "  for (p = 0; p < $variable\.length; p++) {\n";
+    print $fp "    dest.print(\"<xer:Item>\");\n";
+    print $fp "    $variable\[p].xer_encode(dest);\n";
+    print $fp "    dest.print(\"</xer:Item>\");\n";
+    print $fp "  }\n";
+
+    if (defined($name)) {
+      print $fp "  dest.print(\"</$name>\");\n";
+    }
+
+  } elsif ($type eq "CHOICE") {
+    # Code for encoding choice
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence to have no components at all\n";
+    }
+
+    # Extra variable if there are any SEQUENCE OF to process
+
+    foreach (@elements) {
+      my($etype, $etype_value, $etype_value1) = $_->type_get();
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "  int p;\n";
+	last;
+      }
+    }
+
+    # Determine unique names for each element in the choice
+
+    my @unique_names;
+
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+
+      my $name_of_element = undef;
+
+      if (defined($ename)) {
+	# Has name, try to use it
+
+	foreach (@unique_names) {
+	  if ($_ eq $ename) {
+	    # Name already used
+	    print STDERR "Warning: XER code: Non-unique sequence name for $class_name: $ename\n";
+	  }
+	}
+	$name_of_element = $ename;
+      }
+
+      if (! defined($name_of_element)) {
+	# No name, try to use tag number etc ???
+
+	if ($element->is_tagged()) {
+	  my($tag_class, $tag_num, $tag_explicit) = $element->TAG_get();
+	  
+	  my $name_of_element = "Tag" . $tag_num;
+
+	  foreach (@unique_names) {
+	    if ($_ eq $name_of_element) {
+	      print STDERR "Warning: XER code: Non-unique sequence id for $class_name: $new_name\n";
+	    }
+	  }
+	}
+      }
+
+      if (! defined($name_of_element)) {
+	# Still no suitable name, generate one based on "Name"
+
+	my $count = 1;
+	my $is_unique;
+
+	do {
+	  $name_of_element = "Name" . $count;
+	  $is_unique = 1;
+
+	  foreach (@unique_names) {
+	    if ($_ eq $name_of_element) {
+	      $is_unique = 0;
+	      last;
+	    }
+	  }
+	  $count++;
+	} while (! $is_unique);
+      }
+
+      push(@unique_names, $name_of_element);
+    }
+
+    # Generate code for converting the element of a choice to XER
+
+    print $fp "  boolean found = false;\n";
+    print $fp "\n";
+
+    my $count = 0;
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+
+      my $xml_tag_name = $unique_names[$count];
+
+      $count++;
+
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      print $fp "  if (", choice_var_name($ename, $count), " != null) {\n";
+      print $fp "    if (found) {\n";
+      if (defined($ename)) {
+        print $fp "      throw new ASN1Exception(\"multiple CHOICE: $ename\");\n";
+      } else {
+        print $fp "      throw new ASN1Exception(\"multiple CHOICE\");\n";
+      }
+      print $fp "    }\n";
+      print $fp "    found = true;\n";
+
+      # NEED UNIQUENESS if types or names are the same
+
+      print $fp "    dest.print(\"<$xml_tag_name>\");\n";
+
+      my $variable = choice_var_name($ename, $count);
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	# Output SEQUENCE OF or SET OF
+
+	if (defined($ename)) {
+	  print $fp "  dest.print(\"<$ename>\");\n";
+	}
+
+	print $fp "  for (p = 0; p < $variable\.length; p++) {\n";
+	print $fp "    dest.print(\"<xer:Item>\");\n";
+	print $fp "    $variable\[p].xer_encode(dest);\n";
+	print $fp "    dest.print(\"</xer:Item>\");\n";
+	print $fp "  }\n";
+
+	if (defined($ename)) {
+	  print $fp "  dest.print(\"</$ename>\");\n";
+	}
+
+      } else {
+	# Output ordinary variable
+
+	print $fp "    ", $variable, ".xer_encode(dest);\n";
+      }
+
+      print $fp "    dest.print(\"</$xml_tag_name>\");\n";
+      print $fp "  }\n"; # end of "if (choice != null)" block
+      print $fp "\n";
+    }
+
+    # code to check that there was a CHOICE set
+
+    print $fp "  if (! found) {\n";
+    print $fp "    throw new ASN1Exception(\"CHOICE: no choice\");\n";
+    print $fp "  }\n";
+    print $fp "\n";
+
+    # end CHOICE xer_encode
+  
+  } else {
+    # Other types
+
+    if (defined($type_value1)) {
+      die "$prog: $class_name: xer_encode: internal error\n";
+    }
+
+    if (defined($ename)) {
+      print $fp "  dest.print(\"<$ename>\");\n";
+    }
+
+    print $fp "  ", var_name($def_ref->name_get()), ".xer_encode(dest);\n";
+
+    if (defined($ename)) {
+      print $fp "  dest.print(\"<$ename>\");\n";
+    }
+    print $fp "\n";
+  }
+
+  print $fp "}\n"; # end of function
+
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+# java_xer_decode($fp, $name, $def_ref)
+#
+# Outputs to $fp code for the decode from XER encoding method
+# for the ASN.1 production of $name, as defined by $def_ref.
+
+# The decode mechanism consists of four call back methods
+# (startElement, endElement, characters, member) which are
+# controlled by a state machine.  The state machine has the
+# following states for SEQUENCEs and other types:
+#
+# state = 0                              <- before anything has been seen
+# <foo>
+#   state = 1                            <- after enclosing start tag 
+#   <member0  state=2> .... </member0>
+#   state = 3
+#   <member1  state=4> .... </member1>
+#   state = 5
+#   ...
+#   <memberN  state=2N+2> .... </first>
+#   state = 2N+3                         <- before final tag (-1 for CHOICE)
+# </foo>
+# state = java.lang.Integer.MAX_VALUE    <- after final end tag
+
+sub java_xer_decode {
+  my($fp, $class_name, $def_ref) = @_;
+
+  # Comments
+
+  print $fp $DOUBLE_COMMENT_LINE;
+  print $fp "// Nested top-level class for XER parsing.\n";
+  print $fp "\n";
+  print $fp "/**\n";
+  print $fp " * This proxy class is used in parsing XER data into an\n";
+  print $fp " * <code>$class_name</code> object.\n";
+  print $fp " * <p>\n";
+  print $fp " * You should not need to use the members of this structure\n";
+  print $fp " * directly.  To parse XER, create a XERsaxHandler object,\n";
+  print $fp " * create one of these proxy objects, and pass it to the\n";
+  print $fp " * XERsaxHandler object's <code>member_expect</code> method.\n";
+  print $fp " * Run the SAX parser uding the XERsaxHandler object. If\n";
+  print $fp " * successful, you can retrieved the parsed object using\n";
+  print $fp " * the <code>get</code> method on the XERsaxHandler object.\n";
+  print $fp " * \n";
+  print $fp " * \@see au.edu.dstc.zebulun.asn1.XERsaxHandler\n";
+  print $fp " * \@see $class_name\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public static class XER_Parser_Proxy\n";
+  print $fp "  extends XERsaxHandler.XER_Parser_Proxy {\n";
+  print $fp "\n";
+
+  print $fp "private int istate; // to keep track of the parsing state\n";
+  print $fp "private $class_name proxy_value; // to hold partial value\n";
+  print $fp "\n";
+
+  print $fp "//----------------\n";
+  print $fp "/**\n";
+  print $fp " * Parsing proxy constructor for parsing a production.\n";
+  print $fp " * encoded with the default XML tag.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public XER_Parser_Proxy()\n";
+  print $fp "{\n";
+  print $fp "  super(\"$class_name\"); // default XER tag name\n";
+  print $fp "  proxy_value = new $class_name();\n";
+  print $fp "  istate = 0; // initial state\n";
+  print $fp "}\n";
+  print $fp "\n";
+
+  print $fp "//----------------\n";
+  print $fp "/**\n";
+  print $fp " * Parsing proxy constructor for parsing a production.\n";
+  print $fp " * that has had its default XML tag replaced with a different\n";
+  print $fp " * one.\n";
+  print $fp " *\n";
+  print $fp " * \@param overriding_xer_tag  the XML tag to expect.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public XER_Parser_Proxy(String overriding_xer_tag)\n";
+  print $fp "{\n";
+  print $fp "  super(overriding_xer_tag);\n";
+  print $fp "  proxy_value = new $class_name();\n";
+  print $fp "  istate = 0; // initial state\n";
+  print $fp "}\n";
+  print $fp "\n";
+
+  # Get type
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error\n" if (defined($type_value1));
+  
+  # startElement event handler
+
+  print $fp "//----------------\n";
+  print $fp "/**\n";
+  print $fp " * Start tag event handler.\n";
+  print $fp " * \n";
+  print $fp " * \@param handler  the master SAX event handler.\n";
+  print $fp " * \@param name     the start tag.\n";
+  print $fp " * \@param atts     list of attributes in the start tag.\n";
+  print $fp " * \@exception SAXException if the XER encoding is bad.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public void startElement(XERsaxHandler handler,\n";
+  print $fp "                         String name,\n";
+  print $fp "                         org.xml.sax.AttributeList atts)\n";
+  print $fp "  throws org.xml.sax.SAXException\n";
+  print $fp "{\n";
+
+  # Common tag code
+
+  print $fp "  if (name.equals(xer_tag) &&\n";
+  print $fp "      istate == 0) {\n";
+  print $fp "    istate = 1; // state 1 means outer tag has been gotten\n";
+  print $fp "\n";
+
+  my @finishing_states; # calculated here for generating endElement() code
+
+  if ($type eq "SEQUENCE") {
+    # Code for XER parsing sequences
+
+    #???----------------------------------------------------------------
+    #??? Code does not handle elements wihch are SEQUENCE OF or SET OF yet!
+    #???----------------------------------------------------------------
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence has no components at all\n";
+    }
+
+    # Determine unique names for each element in the sequence
+
+    my @unique_names;
+
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      if (defined($ename)) {
+	foreach (@unique_names) {
+	  if ($_ eq $ename) {
+	    # Name already used
+	    print STDERR "Warning: XER code: Non-unique sequence name: $ename\n";
+	  }
+	}
+	push(@unique_names, $ename);
+
+      } else {
+	# Use type name
+	foreach (@unique_names) {
+	  if ($_ eq $etype) {
+	    print STDERR "Warning: XER code: Non-unique sequence type name: $etype\n";
+	  }
+	}
+
+	push(@unique_names, $etype);
+      }
+    }
+
+    # Generate code for converting each element of a sequence to XER
+
+    my $count = 0;
+    my @allowed_states;
+    push(@allowed_states, 1); # got the target production tag state
+    
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      my $gotten_state_for_this_member = ($count * 2) + 3; # 3, 5, 7, ...
+
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      print $fp "  } else if (name.equals(\"", $unique_names[$count], "\") &&\n";
+      print $fp "             (";
+
+      my $first = 1;
+      foreach (@allowed_states) {
+	my $possible_state = $_;
+	if ($first) {
+	  $first = 0;
+	} else {
+	  print $fp " ||\n";
+	  print $fp "              "; # indenting
+	}
+	print $fp "istate == $possible_state";
+      }
+      print $fp ")) {\n";
+
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "    throw new org.xml.sax.SAXException("; #???
+	print $fp "\"XER parsing of SEQUENCE/SET OF not implemented yet\");\n";
+
+      } elsif ($etype eq "ANY") {
+	print $fp "     throw new org.xml.sax.SAXException("; #???
+	print $fp "\"XER parsing of ANY not implemented yet\");\n";
+
+      } else {
+	print $fp "    istate = ", $gotten_state_for_this_member - 1, ";\n";
+	print $fp "    handler.member_expect(new ";
+	print $fp java_class($etype), ".XER_Parser_Proxy(\"";
+	print $fp $unique_names[$count], "\"));\n";
+	print $fp "    handler.startElement(name, atts);\n";
+	print $fp "\n";
+      }
+
+      # Deterime valid states to find start of next element
+
+      if ($element->is_optional()) {
+	# this member is optional, so @allowed_states may still be possible
+	push(@allowed_states, $gotten_state_for_this_member);
+      } else {
+	# this member is mandatory, so only allowed state for next member is
+	# the gotten state of this member
+	@allowed_states = ($gotten_state_for_this_member);
+      }
+
+      $count++;
+    }
+    @finishing_states = @allowed_states;
+
+    # end SEQUENCE xer_decode
+
+  } elsif ($type eq "SEQUENCE OF") {
+    # Code for parsing SEQUENCE OF
+
+    #???----------------------------------------------------------------
+    #??? Code does not handle elements wihch are SEQUENCE OF or SET OF yet!
+    #???----------------------------------------------------------------
+
+    #??? Not implemented yet
+    print $fp "  } else if (true) {\n";
+    print $fp "    throw new org.xml.sax.SAXException(\"XER SEQUENCE OF parsing NOT IMPLEMENTED yet\");\n";
+    print $fp "\n";
+
+    @finishing_states = (-1);
+
+    # end SEQUENCE OF xer_decode
+
+  } elsif ($type eq "CHOICE") {
+
+    #???----------------------------------------------------------------
+    #??? Code does not handle elements wihch are SEQUENCE OF or SET OF yet!
+    #???----------------------------------------------------------------
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: $class_name: unexpected CHOICE has no components at all\n";
+    }
+
+    # Determine unique names for each element in the CHOICE
+
+    my @unique_names;
+
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      if (defined($ename)) {
+	foreach (@unique_names) {
+	  if ($_ eq $ename) {
+	    # Name already used
+	    print STDERR "Warning: XER code: Non-unique sequence name: $ename\n";
+	  }
+	}
+	push(@unique_names, $ename);
+
+      } else {
+	# Use type name
+	foreach (@unique_names) {
+	  if ($_ eq $etype) {
+	    print STDERR "Warning: XER code: Non-unique sequence type name: $etype\n";
+	  }
+	}
+
+	push(@unique_names, $etype);
+      }
+    }
+
+    # Generate code for parsing each element
+
+    my $count = 0;
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      my $getting_state_for_this_member = ($count * 2) + 2; # 2, 4, 6, ...
+
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      print $fp "  } else if (name.equals(\"", $unique_names[$count], "\") &&\n";
+      print $fp "             istate == 1) {\n";
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "    throw new org.xml.sax.SAXException("; #???
+	print $fp "\"XER parsing of SEQUENCE/SET OF not implemented yet\");\n";
+
+      } elsif ($etype eq "ANY") {
+	print $fp "     throw new org.xml.sax.SAXException("; #???
+	print $fp "\"XER parsing of ANY not implemented yet\");\n";
+
+      } else {
+	print $fp "    istate = ", $getting_state_for_this_member, ";\n";
+	print $fp "    handler.member_expect(new ";
+	print $fp java_class($etype), ".XER_Parser_Proxy(\"";
+	print $fp $unique_names[$count], "\"));\n";
+	print $fp "    handler.startElement(name, atts);\n";
+	print $fp "\n";
+      }
+
+      $count++;
+    }
+
+    @finishing_states = (-1); # just before end tag
+
+    # end CHOICE xer_decode
+  
+  } else {
+    # Other types
+
+    my($etype, $etype_value, $etype_value1) = $def_ref->type_get();
+
+    if (defined($type_value1)) {
+      die "$prog: $class_name: xer_encode: internal error\n";
+    }
+
+    if ($etype eq "ANY") {
+      print $fp "     throw new org.xml.sax.SAXException("; #???
+      print $fp "\"XER parsing of ANY not implemented yet\");\n";
+
+    } else {
+      print $fp "  } else if (istate == 1) {\n";
+      print $fp "    istate = 2; // only-one-member-GETTING state\n";
+      print $fp "    handler.member_expect(new ";
+      print $fp java_class($etype), ".XER_Parser_Proxy());\n";
+      print $fp "    handler.startElement(name, atts);\n";
+      print $fp "\n";
+    }
+
+    @finishing_states = (3); # just before end tag
+  }
+
+  # Common code for startElement (error handling)
+
+  print $fp "  } else {\n"; # default case: error in parsing
+  print $fp "    handler.throw_start_unexpected(xer_tag, name);\n";
+  print $fp "  }\n";
+  
+  print $fp "}\n";
+  print $fp "\n";
+
+
+  # endElement event handler
+
+  print $fp "//----------------\n";
+  print $fp "/**\n";
+  print $fp " * End tag event handler\n";
+  print $fp " * \n";
+  print $fp " * \@param handler  the master SAX event handler.\n";
+  print $fp " * \@param name     the start tag.\n";
+  print $fp " * \@exception SAXException if the XER encoding is bad.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public void endElement(XERsaxHandler handler,\n";
+  print $fp "                       String name)\n";
+  print $fp "  throws org.xml.sax.SAXException\n";
+  print $fp "{\n";
+  print $fp "  if (name.equals(xer_tag) &&\n";
+  print $fp "      (";
+
+  my $first = 1;
+  foreach (@finishing_states) {
+    my $possible_state = $_;
+    if ($first) {
+      $first = 0;
+    } else {
+      print $fp " ||\n";
+      print $fp "       "; # indenting
+    }
+    print $fp "istate == $possible_state";
+  }
+  print $fp ")) {\n";
+
+  print $fp "    istate = java.lang.Integer.MAX_VALUE; // parsing completed\n";
+  print $fp "    handler.member_got(proxy_value);\n";
+  print $fp "\n";
+  print $fp "  } else {\n";
+  print $fp "    handler.throw_end_unexpected(xer_tag, name);\n";
+  print $fp "  }\n";
+
+  print $fp "}\n";
+  print $fp "\n";
+
+  # characters event handler
+
+  print $fp "//----------------\n";
+  print $fp "/*\n";
+  print $fp " * Characters event handler does not exist for ASN.1 generated\n";
+  print $fp " * productions.  All (non-whitespace) character data outside tags\n";
+  print $fp " * will be handled by the respective base ASN.1 type\n";
+  print $fp " * characters() method.\n";
+  print $fp " */\n";
+  print $fp "\n";
+  print $fp "// The XERsaxHandler.XER_Proxy_Parser.characters() will be used.\n";
+  print $fp "\n";
+
+  # member elements event handler
+
+  print $fp "//----------------\n";
+  print $fp "/**\n";
+  print $fp " * Member elements parser event handler\n";
+  print $fp " * \n";
+  print $fp " * \@param handler  the master SAX event handler.\n";
+  print $fp " * \@param result   the parsed object.\n";
+  print $fp " * \@exception SAXException if the XER encoding is bad.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  print $fp "public void member(XERsaxHandler handler,\n";
+  print $fp "                   ASN1Any result)\n";
+  print $fp "  throws org.xml.sax.SAXException\n";
+  print $fp "{\n";
+
+  if ($type eq "SEQUENCE") {
+    # Code for XER parsing sequences
+
+    #???----------------------------------------------------------------
+    #??? Code does not handle elements wihch are SEQUENCE OF or SET OF yet!
+    #???----------------------------------------------------------------
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence has no components at all\n";
+    }
+
+    # Determine unique names for each element in the sequence
+
+    my @unique_names;
+
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      if (defined($ename)) {
+	foreach (@unique_names) {
+	  if ($_ eq $ename) {
+	    # Name already used
+	    print STDERR "Warning: XER code: Non-unique sequence name: $ename\n";
+	  }
+	}
+	push(@unique_names, $ename);
+
+      } else {
+	# Use type name
+	foreach (@unique_names) {
+	  if ($_ eq $etype) {
+	    print STDERR "Warning: XER code: Non-unique sequence type name: $etype\n";
+	  }
+	}
+
+	push(@unique_names, $etype);
+      }
+    }
+
+    # Generate code for receiving each element of a sequence to XER
+
+    my $count = 0;
+    my @allowed_states;
+    push(@allowed_states, 1); # got the target production tag state
+
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      $count++;
+
+      my $gotten_state_for_this_member = ($count * 2) + 1; # 3, 5, 7, ...
+
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      my $processing_state = ($count * 2); # the state it should be in to receive
+      my $processed_state = $processing_state + 1; # next state if received
+
+      if ($count == 1) {
+	print $fp "  if ";
+      } else {
+	print $fp "  } else if ";
+      }
+      print $fp "(istate == $processing_state) {\n";
+
+      if ($etype eq "SEQUENCE OF" || $etype eq "SET OF") {
+	print $fp "    throw new org.xml.sax.SAXException(\"XER SEQUENCE OF parsing NOT IMPLEMENTED yet\");\n";
+
+      } else {
+	print $fp "    proxy_value.", seq_var_name($ename, $count);
+	print $fp " = (", java_class($etype), ") result;\n";
+	print $fp "    istate = $processed_state;\n";
+	print $fp "\n";
+      }
+    }
+
+    # end SEQUENCE xer_decode member()
+
+  } elsif ($type eq "SEQUENCE OF") {
+    # Code for parsing SEQUENCE OF
+
+    #??? Not implemented yet
+    print $fp "  if (true) {\n";
+    print $fp "    throw new org.xml.sax.SAXException(\"XER SEQUENCE OF parsing NOT IMPLEMENTED yet\");\n";
+    print $fp "\n";
+
+
+    # end SEQUENCE OF xer_decode member()
+
+  } elsif ($type eq "CHOICE") {
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: $class_name: choice has no components at all\n";
+    }
+
+    # Generate code for receiving each element of a CHOICE to XER
+
+    my $count = 0;
+
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+
+      $count++;
+
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      my $processing_state = ($count * 2); # the state it should be in to receive
+
+      if ($count == 1) {
+	print $fp "  if ";
+      } else {
+	print $fp "  } else if ";
+      }
+      print $fp "(istate == $processing_state) {\n";
+
+      if ($etype eq "SEQUENCE OF" || $etype eq "SET OF") {
+	print $fp "    throw new org.xml.sax.SAXException(\"XER SEQUENCE OF parsing NOT IMPLEMENTED yet\");\n";
+
+      } else {
+	print $fp "    proxy_value.", choice_var_name($ename, $count);
+	print $fp " = (", java_class($etype), ") result;\n";
+	print $fp "    istate = -1; // CHOICE gotten\n";
+	print $fp "\n";
+      }
+    }
+
+    # end CHOICE xer_decode member()
+  
+  } else {
+    # Other types
+
+    my($etype, $etype_value, $etype_value1) = $def_ref->type_get();
+
+    if (defined($type_value1)) {
+      die "$prog: $class_name: xer_encode: internal error\n";
+    }
+
+    print $fp "  if (istate == 2) { // only-one-member-GETTING state\n";
+
+    if ($etype eq "SEQUENCE OF" || $etype eq "SET OF") {
+      print $fp "    throw new org.xml.sax.SAXException(\"XER SEQUENCE OF parsing NOT IMPLEMENTED yet\");\n";
+
+    } else {
+      print $fp "    proxy_value.", var_name($def_ref->name_get());
+      print $fp " = (", java_class($etype), ") result;\n";
+      print $fp "    istate = 3; // got content, waiting for end XML tag\n";
+    }
+
+    print $fp "\n";  
+  }
+
+  # Common code for member method (error handling)
+
+  print $fp "  } else {\n"; # default case: error in parsing
+  print $fp "    handler.throw_member_unexpected(xer_tag);\n";
+  print $fp "  }\n";
+
+  print $fp "}\n";
+  print $fp "\n";
+
+
+  # End of nested inner-class code
+
+  print $fp "} // nested top-level class: XER_Parser_Proxy\n";
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+
+sub java_toString {
+  my($fp, $class_name, $def_ref) = @_;
+
+  print $fp $COMMENT_LINE;
+  print $fp "/**\n";
+  print $fp " * Converts this $class_name object to a <code>String</code>\n";
+  print $fp " * representation.\n";
+  print $fp " *\n";
+  print $fp " * \@return a string representation of this $class_name.\n";
+  print $fp " */\n";
+  print $fp "\n";
+  print $fp "public String\n";
+  print $fp "toString()\n";
+  print $fp "{\n";
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error\n" if (defined($type_value1));
+
+  if ($type eq "SEQUENCE") {
+    # Code for encoding sequences
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence to have no components at all\n";
+    }
+
+    # Extra variable if there are any SEQUENCE OF to process
+
+    foreach (@elements) {
+      my($etype, $etype_value, $etype_value1) = $_->type_get();
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "  int p;\n";
+	last;
+      }
+    }
+
+    print $fp "  StringBuffer str = new StringBuffer(\"{\");\n";
+    print $fp "  int outputted = 0;\n";
+    print $fp "\n";
+
+    # Generate code for converting each element of a sequence to string
+
+    my $first = 1;
+
+    my $count = 0;
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      $count++;
+
+      my $opt = $element->is_optional();
+
+      if ($opt) {
+	print $fp "  if (", seq_var_name($ename, $count), " != null) {\n";
+      }
+
+      if (! $first) {
+	print $fp "  " if ($opt);
+	print $fp "  if (0 < outputted) {\n";
+	print $fp "  " if ($opt);
+	print $fp "    str.append(\", \");\n";
+	print $fp "  " if ($opt);
+	print $fp "  }\n";
+      }
+
+      if (defined($ename)) {
+	print $fp "  " if ($opt);
+	print $fp "  str.append(\"$ename \");\n";
+      }
+
+      my $variable = seq_var_name($ename, $count);
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	# Output SEQUENCE OF or SET OF
+	print $fp "  " if ($opt);
+	print $fp "  str.append(\"{\");\n";
+	print $fp "  " if ($opt);
+	print $fp "  for (p = 0; p < $variable\.length; p++) {\n";
+	print $fp "  " if ($opt);
+	print $fp "    if (p != 0)\n";
+	print $fp "  " if ($opt);
+	print $fp "      str.append(\", \");\n";
+
+	print $fp "  " if ($opt);
+	print $fp "    str.append($variable\[p]);\n";
+	print $fp "  " if ($opt);
+	print $fp "  }\n";
+	print $fp "  " if ($opt);
+	print $fp "  str.append(\"}\");\n";
+
+      } else {
+	# Output ordinary variable
+	print $fp "  " if ($opt);
+	print $fp "  str.append(", $variable, ");\n";
+      }
+
+      print $fp "  " if ($opt);
+      print $fp "  outputted++;\n";
+
+      if ($opt) {
+	print $fp "  }\n";
+      }
+      print $fp "\n";
+
+      $first = 0;
+    }
+
+    print $fp "  str.append(\"}\");\n";
+    print $fp "\n";
+
+    print $fp "  return str.toString();\n";
+
+    # end sequence toString
+
+  } elsif ($type eq "SEQUENCE OF") {
+    # Code for encoding SEQUENCE OF
+
+    my $variable = var_name($def_ref->name_get());
+
+    print $fp "  StringBuffer str = new StringBuffer(\"{\");\n";
+    print $fp "  int p;\n";
+    print $fp "\n";
+
+    print $fp "  for (p = 0; p < $variable\.length; p++) {\n";
+    print $fp "    str.append($variable\[p]);\n";
+    print $fp "  }\n";
+    print $fp "\n";
+
+    print $fp "  str.append(\"}\");\n";
+    print $fp "\n";
+
+    print $fp "  return str.toString();\n";
+
+  } elsif ($type eq "CHOICE") {
+    # Code for encoding choice
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: unexpected sequence to have no components at all\n";
+    }
+
+    # Extra variable if there are any SEQUENCE OF to process
+
+    foreach (@elements) {
+      my($etype, $etype_value, $etype_value1) = $_->type_get();
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "  int p;\n";
+	last;
+      }
+    }
+
+    print $fp "  StringBuffer str = new StringBuffer(\"{\");\n";
+    print $fp "\n";
+
+    # Generate code for converting the element of a choice to string
+
+    print $fp "  boolean found = false;\n";
+    print $fp "\n";
+
+    my $count = 0;
+    foreach (@elements) {
+      my $element = $_;
+      my $ename = $element->name_get();
+
+      $count++;
+
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      die "$prog: internal error\n" if (defined($etype_value1));
+
+      print $fp "  if (", choice_var_name($ename, $count), " != null) {\n";
+      print $fp "    if (found)\n";
+      if (defined($ename)) {
+        print $fp "      str.append(\"<ERROR: multiple CHOICE: $ename> \");\n";
+      } else {
+        print $fp "      str.append(\"<ERROR: multiple CHOICE> \");\n";
+      }
+      print $fp "    found = true;\n";
+      if (defined($ename)) {
+	print $fp "    str.append(\"$ename \");\n";
+      }
+
+      my $variable = choice_var_name($ename, $count);
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	# Output SEQUENCE OF or SET OF
+	print $fp "  str.append(\"{\");\n";
+	print $fp "  for (p = 0; p < $variable\.length; p++) {\n";
+	print $fp "    str.append($variable\[p]);\n";
+	print $fp "  }\n";
+	print $fp "  str.append(\"}\");\n";
+      } else {
+	# Output ordinary variable
+	print $fp "  str.append(", $variable, ");\n";
+      }
+
+      print $fp "  }\n";
+      print $fp "\n";
+    }
+
+    print $fp "  str.append(\"}\");\n";
+    print $fp "\n";
+
+    print $fp "  return str.toString();\n";
+
+    # end choice toString
+  
+  } else {
+    # Other types
+
+    if (defined($type_value1)) {
+      die "$prog: $class_name: toString: internal error\n";
+    }
+    print $fp "  return ", var_name($def_ref->name_get()), ".toString();\n";
+  }
+
+  print $fp "}\n";
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+# Generate the java code for the variables
+
+sub java_variables {
+  my($fp, $class_name, $def_ref) = @_;
+
+  print $fp $COMMENT_LINE;
+
+  print $fp "/*\n";
+  print $fp " * Member variables of the class.\n";
+  print $fp " */\n";
+  print $fp "\n";
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error: $class_name: variable: type complex\n"
+    if (defined($type_value1));
+
+  if ($type eq "SEQUENCE") {
+    # Variables for sequences
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: sequence has no components at all: $class_name\n";
+    }
+
+    my $count = 0;
+    foreach(@elements) {
+      my($element) = $_;
+      my($ename) = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      die "$prog: internal error: $class_name: $ename:variable: type complex\n"
+	if (defined($etype_value1));
+
+      $count++;
+      my $variable = seq_var_name($ename, $count);
+      # The java member declaration
+
+      if ($etype eq "CHOICE" || $etype eq "SEQUENCE") {
+	die "$prog: internal error: choice or sequence in sequence\n";
+      }
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "public ", java_class($etype_value), " ", $variable, "[];";
+      } else {
+	print $fp "public ", java_class($etype), " ", $variable, ";";
+      }
+      if ($element->is_optional()) {
+	print $fp " // optional";
+      }
+      print $fp "\n";
+    }
+	
+  } elsif ($type eq "SEQUENCE OF" ||
+	   $type eq "SET OF") {
+    # Variables for a sequence of
+
+    print $fp "public ", java_class($type_value), " ",var_name($ename),"[];\n";
+
+  } elsif ($type eq "CHOICE") {
+    # Variables for choice
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: choice has no components at all: $class_name\n";
+    }
+
+    my $count = 0;
+    foreach(@elements) {
+      my($element) = $_;
+      my($ename) = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      die "$prog: internal error: $class_name: $ename: variable:type complex\n"
+	if (defined($etype_value1));
+
+      $count++;
+      my $variable = choice_var_name($ename, $count);
+
+      if ($element->is_optional()) {
+	die "$prog: internal error: $class_name: choice has optional element!";
+      }
+
+      # The java member declaration
+
+      if ($etype eq "CHOICE" || $etype eq "SEQUENCE") {
+	die "$prog: internal error: choice or sequence in sequence\n";
+      }
+
+      if ($etype eq "SEQUENCE OF" ||
+	  $etype eq "SET OF") {
+	print $fp "public ", java_class($etype_value), " $variable\[];";
+      } else {
+	print $fp "public ", java_class($etype), " $variable;";
+      }
+      print $fp "\n";
+    }
+
+  } else {
+    # Other types
+
+    if ($type eq "ENUMERATED") {
+      if (! defined($type_value)) {
+	die "$prog: $class_name: variables: internal: ENUMERATED no values\n";
+      }
+    } elsif ($type eq "INTEGER") {
+      # Don't care either way
+    } else {
+      # All other type must not have values
+      if (defined($type_value)) {
+	die "$prog: $class_name: variables: internal: $type has values\n";
+      }
+    }
+    if (defined($type_value1)) {
+      die "$prog: $class_name: variables: internal: $type has values1\n";
+    }
+
+    # The variable itself
+
+    print $fp "/**\n";
+    print $fp " * The value of this object.\n";
+    print $fp " */\n";
+    print $fp "public ", java_class($type), " ", var_name($ename), ";\n";
+  }
+
+  print $fp "\n";
+}
+
+#----------------------------------------------------------------
+# Generate the java code for the enumerated constants
+
+sub java_constants_header {
+  my($fp) = @_;
+
+  print $fp $COMMENT_LINE;
+
+  print $fp "/*\n";
+  print $fp " * Enumerated constants for the class.\n";
+  print $fp " */\n";
+  print $fp "\n";
+}
+
+sub java_constants {
+  my($fp, $class_name, $def_ref) = @_;
+
+  my $header_printed = 0;
+
+  my($type, $type_value, $type_value1) = $def_ref->type_get();
+  die "$prog: internal error: $class_name: variable: type complex\n"
+    if (defined($type_value1));
+
+  if ($type eq "SEQUENCE" ||
+      $type eq "CHOICE") {
+    # Variables for sequences or choice
+
+    my(@elements) = @$type_value;
+    if ($#elements < 0) {
+      die "$prog: sequence has no components at all: $class_name\n";
+    }
+
+    my $count = 0;
+    foreach(@elements) {
+      my($element) = $_;
+      my($ename) = $element->name_get();
+      my($etype, $etype_value, $etype_value1) = $element->type_get();
+      die "$prog: internal error: $class_name: $ename:variable: type complex\n"
+	if (defined($etype_value1));
+
+      $count++;
+      my $variable = seq_var_name($ename, $count);
+
+      if ($etype eq "INTEGER" || $etype eq "ENUMERATED") {
+	if (defined($etype_value)) {
+
+	  if (! $header_printed) {
+	    java_constants_header($fp);
+	    $header_printed = 1;
+	  }
+
+	  # Create constants for them
+
+	  print $fp "// Enumerated constants for $ename\n";
+
+	  my %evalues = %$etype_value;
+	  foreach (sort { $evalues{$a} <=> $evalues{$b}; } (keys(%evalues))) {
+	    my $constant_name = $_;
+	    $constant_name =~ s/\-/\_/g;
+
+	    print $fp "public static final int E_$constant_name = $evalues{$_};\n";
+	    print $fp "\n";
+	  }
+	  print $fp "\n";
+	}
+      }
+    }
+	
+  } elsif ($type eq "SEQUENCE OF" ||
+	   $type eq "SET OF") {
+    # Variables for a sequence of
+
+    #???
+
+  } else {
+    # Other types
+
+    if ($type eq "ENUMERATED") {
+      if (! defined($type_value)) {
+	die "$prog: $class_name: variables: internal: ENUMERATED no values\n";
+      }
+    } elsif ($type eq "INTEGER") {
+      # Don't care either way
+    } else {
+      # All other type must not have values
+      if (defined($type_value)) {
+	die "$prog: $class_name: variables: internal: $type has values\n";
+      }
+    }
+    if (defined($type_value1)) {
+      die "$prog: $class_name: variables: internal: $type has values1\n";
+    }
+
+    # Make constants from any enumerated values (INTEGER or ENUMERATED)
+
+    if (defined($type_value)) {
+      if (! $header_printed) {
+	java_constants_header($fp);
+	$header_printed = 1;
+      }
+
+      # Create constants for them
+      %evalues = %$type_value;
+      foreach (sort { $evalues{$a} <=> $evalues{$b}; } (keys(%evalues))) {
+	my $constant_name = $_;
+	$constant_name =~ s/\-/\_/g;
+	print $fp "public static final int E_$constant_name = $evalues{$_};\n";
+      }
+      print $fp "\n";
+    }
+  }
+}
+
+#----------------------------------------------------------------
+
+sub java_footer {
+  my($fp, $class_name) = @_;
+
+  print $fp "} // class: $class_name\n";
+  print $fp "\n";
+
+  print $fp $COMMENT_LINE;
+  print $fp "//EOF\n";
+}
+
+#----------------------------------------------------------------
+
+sub generate_java_file {
+  my($module_reference,
+     $root_hier, $module_fullname, $name,
+     $def_ref, $imports_ref, $version) = @_;
+
+  $name = java_class($name);
+
+  open(JAVA, ">$name.java") || die "$prog: cannot create $name.java: $!\n";
+
+  java_header(JAVA,
+	      $module_reference,
+	      $root_hier, $module_fullname, $name,
+	      $def_ref, $imports_ref, $version);
+
+  java_constants(JAVA, $name, $def_ref);
+  java_variables(JAVA, $name, $def_ref);
+
+  java_constructor(JAVA, $name, $def_ref);
+  java_constructor_from_ber(JAVA, $name);
+
+  java_ber_decode(JAVA, $name, $def_ref);
+  java_ber_encode(JAVA, $name, $def_ref, $root_hier);
+  java_toString(JAVA, $name, $def_ref);
+
+  if ($generate_xer) {
+    java_xer_encode(JAVA, $name, $def_ref);
+    java_xer_decode(JAVA, $name, $def_ref);
+  }
+
+  java_footer(JAVA, $name);
+
+  close(JAVA);
+}
+
+#----------------------------------------------------------------
+
+sub process_production {
+  my($module_reference,
+     $root_hier, $module_fullname, $production,
+     $def_ref, $imports_ref, $quiet, $verbose, $doit, $version) = @_;
+
+  # Possible alias for production
+
+  if (defined($production_aliases{$production})) {
+    if (! $quiet) {
+      print "  $production";
+    }
+    $production = $production_aliases{$production};
+    if (! $quiet) {
+      print " aliased to $production";
+    }
+
+  } else {
+    if (! $quiet) {
+      print "  $production\n";
+    }
+  }
+
+  if ($verbose) {
+    print $def_ref->toString("    ");
+  }
+
+  if ($doit) {
+    generate_java_file($module_reference,
+		       $root_hier, $module_fullname, $production,
+		       $def_ref, $imports_ref, $version);
+  }
+}
+
+#----------------------------------------------------------------
+
+sub process_module {
+  my($output_dir, $root_hier, $module_reference, $mod_oid, $def_ref, $imports_ref,
+     $quiet, $verbose, $doit, $version) = @_;
+  my(%defs) = %{$def_ref};
+
+  # Possible alias for module
+
+  if (! defined($module_aliases{$module_reference})) {
+    die "$prog: $module_reference not defined in database\n";
+  }
+  
+  my $module_fullname = $module_aliases{$module_reference};
+
+  if (! $quiet) {
+    print "Module $module_reference -> $module_fullname\n";
+  }
+
+  my @path_names = split(/\./, $module_fullname);
+  my @root_path_names = split(/\./, $root_hier);
+  my $module_name = $path_names[$#path_names]; # use last name in path
+
+  my $module_path = $output_dir . '/' . join('/', @root_path_names) . '/'. join('/', @path_names);
+
+  # Flatten the module
+
+ ASN1parser::asn1_flatten(\%defs, $verbose);
+
+  # Process module
+
+  if ($opt_modules) {
+    print "$module_path\n";
+  }
+
+  my $saved_dir = Cwd::getcwd();
+
+  if ($doit) {
+    # Create a directory for the module, and step into it
+
+    if (! (-d $module_path)) {
+      mkpath([$module_path], 0, 0755) || die "$prog: $module_path, $!\n";
+    }
+    chdir $module_path || die "$prog: cannot cd: $module_path: $!\n";
+  }
+
+  my($count) = 0;
+  foreach(sort(keys(%defs))) {
+    my($production) = $_;
+
+    process_production($module_reference,
+		       $root_hier, $module_fullname,
+		       $production, $defs{$production}, $imports_ref,
+		       $quiet, $verbose, $doit, $version);
+    $count++;
+  }
+
+  if (! $quiet) {
+    print "Productions = ", $count, "\n";
+  }
+
+  if ($doit) {
+    # Step back out of module directory
+    chdir $saved_dir || die "$prog: cannot cd back to working directory: $!\n";
+  }
+
+  return $count;
+}
+
+#----------------------------------------------------------------
+
+sub process_arguments {
+  # Process command line switches
+
+  $opt_root = "zebulun"; # default value
+  $opt_out = "./"; #default value
+  $opt_version = "1.7";
+
+  my($result) = GetOptions ("debugparser",
+			    "debugtokens",
+			    "help",
+			    "noaction",
+			    "modules",
+			    "root=s",
+          "out=s",
+			    "version=s",
+			    "xer",
+			    "quiet",
+			    "verbose");
+  if (! $result) {
+    die "$prog: Usage error: -h for help\n";
+  }
+
+  if ($opt_help) {
+    $opt_help = 1; # to shutup warnings when run with perl -w option
+    print "Usage: $prog [options] [asn1file]\n";
+    print "Options: (can be abbreviated)\n";
+    print "  -root root           the root path (dot separated)\n";
+    print "  -out path            the output path\n";
+    print "  -xer                 generate XER code (experimental feature)\n";
+    print "  -debugtokens         dump debug trace for tokenizer\n";
+    print "  -debugparser         dump debug trace for the ASN.1 parser\n";
+    print "  -help                show this help information\n";
+    print "  -noaction            no output files created, just parse input\n";
+    print "  -quiet               no output\n";
+    print "  -verbose             verbose output\n";
+    print "  -modules             print out module names\n";
+    exit(0);
+  }
+
+  # Override default style parameters with command line switches
+
+  if (defined($opt_debugtokens)) {
+    $ASN1parser::lex_trace = 1;
+    $ASN1parser::lex_trace = 1; # gets rid of -w warning
+  }
+
+  if (defined($opt_debugparser)) {
+    $ASN1parser::parse_trace = 1;
+    $ASN1parser::parse_trace = 1; # gets rid of -w warning
+  }
+
+  # Misc (shut up -w warnings)
+
+  $opt_debugparser = $opt_debugparser;
+  $opt_debugtokens = $opt_debugtokens;
+  $opt_modules = $opt_modules;
+  $opt_quiet = $opt_quiet;
+  $opt_verbose = $opt_verbose;
+  $opt_noaction = $opt_noaction;
+
+  if (defined($opt_xer)) {
+    $opt_xer = $opt_xer;
+    $generate_xer = 1;
+  }
+
+  # Source file
+
+  my($srcfile) = "-"; # default to stdin
+
+  if ($#ARGV == 0) {
+    $srcfile = $ARGV[0];
+  } elsif (0 < $#ARGV) {
+    die "$prog: Usage error: too many arguments (-h for help)\n";
+  }
+  
+  return ($srcfile, $opt_out, $opt_root, $opt_quiet, $opt_verbose, (! $opt_noaction), $opt_version);
+}
+
+#----------------------------------------------------------------
+
+sub main {
+  my($filename, $opt_out, $root_hier, $quiet, $verbose, $doit, $version) = process_arguments();
+
+  # Load in the ASN.1
+
+  my $modules_ref = ASN1parser::parse_asn1($filename);
+  my @modules = @$modules_ref;
+
+  # Process the ASN.1 definitions
+
+  my $total_productions = 0;
+  foreach (@modules) {
+    my($module_reference, $mod_oid, $def_ref, $imports_ref) = @$_;
+    $total_productions += process_module($opt_out, $root_hier, $module_reference, 
+					 $mod_oid, $def_ref, $imports_ref,
+					 $quiet, $verbose, $doit, $version);
+  }
+
+  if (! $quiet) {
+    print "Total productions = ", $total_productions, "\n";
+  }
+}
+
+#----------------------------------------------------------------
+
+main();
+
+#----------------------------------------------------------------
+#EOF
