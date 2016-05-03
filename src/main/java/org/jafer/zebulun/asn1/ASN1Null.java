@@ -158,15 +158,17 @@ public final class ASN1Null extends ASN1Any {
     //----------------
     @Override
     public void startElement(XERsaxHandler handler,
-            String name,
-            org.xml.sax.AttributeList atts)
+            String uri,
+            String localName,
+            String qName,
+            org.xml.sax.Attributes atts)
             throws org.xml.sax.SAXException {
-      if (name.equals(xer_tag)
+      if (localName.equals(xer_tag)
               && state == STATE_INIT) {
         state = STATE_START_GOT;
 
       } else {
-        handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, localName);
       }
     }
 

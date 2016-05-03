@@ -68,7 +68,7 @@ public class BERPrimitive extends BEREncoding {
    * has been written out.
    *
    * @param	dest - OutputStream to write encoding to.
-   * @throws java.io.IOException
+   * @throws java.io.IOException  input\output error
    */
   @Override
   public void

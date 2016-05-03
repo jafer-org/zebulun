@@ -367,8 +367,7 @@ public final class ASN1Real extends ASN1Any {
         throw new ASN1Exception("ASN.1 REAL: NaN can't be BER encoded"); // NaN
       }
 
-    } else // Ordinary number
-    if (exponent == 0 && mantissa == 0) {
+    } else if (exponent == 0 && mantissa == 0) { // Ordinary number
       // Zero (plus or minus), encode as ASN.1 REAL zero
 
       encoding = new int[0]; // positive zero: no content octets
@@ -532,8 +531,10 @@ public final class ASN1Real extends ASN1Any {
     //----------------
     @Override
     public void startElement(XERsaxHandler handler,
-            String name,
-            org.xml.sax.AttributeList atts)
+            String uri,
+            String localName,
+            String qName,
+            org.xml.sax.Attributes atts)
             throws org.xml.sax.SAXException {
       throw new org.xml.sax.SAXException("ASN.1 REAL support not implemented yet");
     }
@@ -542,9 +543,9 @@ public final class ASN1Real extends ASN1Any {
 
     /**
      *
-     * @param handler
-     * @param name
-     * @throws SAXException
+     * @param handler XERsaxHandler
+     * @param name    name
+     * @throws SAXException SAX error
      */
     @Override
     public void endElement(XERsaxHandler handler,

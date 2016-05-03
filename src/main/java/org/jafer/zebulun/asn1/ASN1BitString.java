@@ -12,6 +12,7 @@ package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -243,7 +244,7 @@ public final class ASN1BitString extends ASN1Any {
 
     private int state;
 
-    private java.util.Vector proxy_value;
+    private ArrayList<Boolean> proxy_value;
 
     //----------------
     public XER_Parser_Proxy() {
@@ -259,16 +260,18 @@ public final class ASN1BitString extends ASN1Any {
     //----------------
     @Override
     public void startElement(XERsaxHandler handler,
-            String name,
-            org.xml.sax.AttributeList atts)
+            String uri,
+            String localName,
+            String qName,
+            org.xml.sax.Attributes atts)
             throws org.xml.sax.SAXException {
-      if (name.equals(xer_tag)
+      if (localName.equals(xer_tag)
               && state == STATE_INIT) {
-        proxy_value = new java.util.Vector();
+        proxy_value = new ArrayList<>();
         state = STATE_START_GOT;
 
       } else {
-        handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, localName);
       }
     }
 
@@ -281,10 +284,14 @@ public final class ASN1BitString extends ASN1Any {
               && state == STATE_VALUE_GOT) {
         // Create new BIT STRING object
 
+        if (proxy_value == null) {
+          throw new org.xml.sax.SAXException("Proxy Value is empty");
+        }
+        
         int size = proxy_value.size();
         boolean[] a_value = new boolean[size];
         for (int x = 0; x < size; x++) {
-          a_value[x] = (java.lang.Boolean) proxy_value.elementAt(x);
+          a_value[x] = proxy_value.get(x);
         }
         handler.member_got(new ASN1BitString(a_value));
 
@@ -305,16 +312,20 @@ public final class ASN1BitString extends ASN1Any {
       int begin = start;
 
       if (state == STATE_START_GOT) {
+        if (proxy_value == null) {
+          throw new org.xml.sax.SAXException("Proxy Value is empty");
+        }
+
         int end = begin + length;
 
         while (begin < end) {
           char character = ch[begin];
           if (character == '0') {
-            proxy_value.addElement(false);
+            proxy_value.add(false);
             state = STATE_VALUE_GOT;
 
           } else if (character == '1') {
-            proxy_value.addElement(true);
+            proxy_value.add(true);
             state = STATE_VALUE_GOT;
 
           } else if (Character.isWhitespace(character)) {

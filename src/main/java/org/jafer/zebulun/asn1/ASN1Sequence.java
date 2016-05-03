@@ -96,6 +96,10 @@ public final class ASN1Sequence extends ASN1Any {
       throw new ASN1EncodingException("ASN.1 SEQUENCE: bad form, primitive");
     }
 
+    if (!(ber_enc instanceof BERConstructed)) {
+      throw new ASN1EncodingException("ASN.1 EXTERNAL: incorrect form, not BERConstructed");      
+    }
+
     BERConstructed ber = (BERConstructed) ber_enc;
 
     int len = ber.number_components();

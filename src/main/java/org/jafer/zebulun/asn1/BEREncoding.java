@@ -12,7 +12,7 @@ package org.jafer.zebulun.asn1;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Vector;
+import java.util.ArrayList;
 
 //----------------------------------------------------------------
 /**
@@ -248,7 +248,7 @@ public abstract class BEREncoding {
     } else {
       // Constructed
 
-      Vector chunks = new Vector(8, 8); // dynamic storage for parts
+      ArrayList<BEREncoding> chunks = new ArrayList<>(); // dynamic storage for parts
       int total_read = 0;
 
       if (0 <= length) {
@@ -260,7 +260,7 @@ public abstract class BEREncoding {
             throw new ASN1EncodingException("Unexpected end in BER encoding");
           }
 
-          chunks.addElement(chunk);
+          chunks.add(chunk);
           total_read += chunk.i_total_length;
         }
 
@@ -278,18 +278,14 @@ public abstract class BEREncoding {
                   && chunk.i_total_length == 2) {
             break; // end-of-contents marker reached, stop reading
           } else {
-            chunks.addElement(chunk); // add to chunks
+            chunks.add(chunk); // add to chunks
           }
         }
       }
 
       // Take the vector of chunks and put them in an array of BEREncoding
-      int num_elements = chunks.size();
-      BEREncoding[] parts = new BEREncoding[num_elements];
-      for (int x = 0; x < num_elements; x++) {
-        parts[x] = ((BEREncoding) chunks.elementAt(x));
-      }
-
+      BEREncoding[] parts = chunks.toArray(new BEREncoding[chunks.size()]);
+ 
       return new BERConstructed(tag_type, tag, parts);
     }
   }

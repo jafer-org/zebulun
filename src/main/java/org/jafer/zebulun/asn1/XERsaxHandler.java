@@ -16,16 +16,16 @@
  */
 package org.jafer.zebulun.asn1;
 
-import java.util.Hashtable;
-import org.xml.sax.HandlerBase;
-import org.xml.sax.AttributeList;
+import java.util.HashMap;
+import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 //----------------------------------------------------------------
 /**
  * This class is an event handler for SAX. This allows XER encodings to be
- * parsed using any SAX compliant XML parser.
+Def * parsed using any SAX compliant XML parser.
  * <p>
  * The way to use this class to parse XER using a SAX parser is:
  *
@@ -45,7 +45,7 @@ import org.xml.sax.SAXException;
  * Refer to the SAX XML parser documentation for more details on how to use SAX
  * parsers.
  */
-public class XERsaxHandler extends HandlerBase {
+public class XERsaxHandler extends DefaultHandler {
 
   // Zebulun's proxy interface
   //
@@ -63,8 +63,10 @@ public class XERsaxHandler extends HandlerBase {
 
     //----------------
     public abstract void startElement(XERsaxHandler h,
-            String name,
-            AttributeList atts)
+            String uri,
+            String localName,
+            String qName,
+            Attributes atts)
             throws SAXException;
 
     //----------------
@@ -105,7 +107,7 @@ public class XERsaxHandler extends HandlerBase {
   public XERsaxHandler() {
     proxy_stack = new java.util.Stack();
 
-    namespaces = new Hashtable();
+    namespaces = new HashMap<>();
 
     result = null;
   }
@@ -181,17 +183,19 @@ public class XERsaxHandler extends HandlerBase {
    * Called by the SAX parser, it then redirect the event to the current proxy
    * object
    *
-   * @param qualified_name XML tag name (including namespace prefix).
-   * @param atts attribute list.
+   * @param uri         namespace
+   * @param localName   local name part
+   * @param qName       qualified name
+   * @param attributes  attributes
    * @exception SAXException on error.
    */
   @Override
-  public void startElement(String qualified_name, AttributeList atts)
+  public void startElement(String uri, String localName, String qName, Attributes attributes)
           throws SAXException {
     //System.out.println("DEBUG: <" + qualified_name + ">");
 
     // Identify namespaces
-    String localpart = name_localpart(qualified_name);
+    String localpart = name_localpart(qName);
 
     // Get current proxy object for parsing
     if (proxy_stack.empty()) {
@@ -201,7 +205,7 @@ public class XERsaxHandler extends HandlerBase {
     XER_Parser_Proxy current_proxy = (XER_Parser_Proxy) proxy_stack.peek();
 
     // Use current proxy object to parse it
-    current_proxy.startElement(this, localpart, atts);
+    current_proxy.startElement(this, uri, localpart, qName, attributes);
   }
 
   //----------------------------------------------------------------
@@ -211,16 +215,18 @@ public class XERsaxHandler extends HandlerBase {
    * Called by the SAX parser, it then redirect the event to the current proxy
    * object
    *
-   * @param qualified_name XML tag name (including namespace prefix).
+   * @param uri         namespace
+   * @param localName   local name part
+   * @param qName       qualified name
    * @exception SAXException on error.
    */
   @Override
-  public void endElement(String qualified_name)
+  public void endElement(String uri, String localName, String qName)
           throws SAXException {
     //System.out.println("DEBUG: </" + qualified_name + ">");
 
     // Namespaces
-    String localpart = name_localpart(qualified_name);
+    String localpart = name_localpart(qName);
 
     // Get current proxy object
     if (proxy_stack.empty()) {
@@ -390,7 +396,7 @@ public class XERsaxHandler extends HandlerBase {
       return "default";
     } else {
       // Extract prefix from qualified name
-      String ns_full = (String) namespaces.get(tag_name.substring(0, index));
+      String ns_full = namespaces.get(tag_name.substring(0, index));
       if (ns_full == null) {
         // error
       }
@@ -413,7 +419,7 @@ public class XERsaxHandler extends HandlerBase {
   private java.util.Stack proxy_stack;
 
   // Not used yet. ???
-  private Hashtable namespaces;
+  private HashMap<String, String> namespaces;
 
   /**
    * Holder of the top level parse result when it is successfully parsed. This

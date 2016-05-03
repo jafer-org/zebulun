@@ -110,6 +110,10 @@ public final class ASN1External extends ASN1Any {
     if (ber_enc instanceof BERPrimitive) {
       throw new ASN1EncodingException("ASN.1 EXTERNAL: incorrect form, primitive encoding");
     }
+    
+    if (!(ber_enc instanceof BERConstructed)) {
+      throw new ASN1EncodingException("ASN.1 EXTERNAL: incorrect form, not BERConstructed");      
+    }
 
     BERConstructed ber = (BERConstructed) ber_enc;
 
@@ -454,62 +458,64 @@ public final class ASN1External extends ASN1Any {
     //----------------
     @Override
     public void startElement(XERsaxHandler handler,
-            String name,
-            org.xml.sax.AttributeList atts)
+            String uri,
+            String localName,
+            String qName,
+            org.xml.sax.Attributes atts)
             throws org.xml.sax.SAXException {
-      if (name.equals(xer_tag)
+      if (localName.equals(xer_tag)
               && istate == STATE_INIT) {
         istate = STATE_EXTERNAL_GETTING;
 
-      } else if (name.equals("direct-reference")
+      } else if (localName.equals("direct-reference")
               && istate == STATE_EXTERNAL_GETTING) {
         istate = STATE_DIRECT_REFERENCE_GETTING;
         handler.member_expect(new ASN1ObjectIdentifier.XER_Parser_Proxy("direct-reference"));
-        handler.startElement(name, atts);
+        handler.startElement(uri, localName, qName, atts);
 
-      } else if (name.equals("indirect-reference")
+      } else if (localName.equals("indirect-reference")
               && (istate == STATE_EXTERNAL_GETTING
               || istate == STATE_DIRECT_REFERENCE_GOT)) {
         istate = STATE_INDIRECT_REFERENCE_GETTING;
         handler.member_expect(new ASN1Integer.XER_Parser_Proxy("indirect-reference"));
-        handler.startElement(name, atts);
+        handler.startElement(uri, localName, qName, atts);
 
-      } else if (name.equals("data-value-descriptor")
+      } else if (localName.equals("data-value-descriptor")
               && (istate == STATE_EXTERNAL_GETTING
               || istate == STATE_DIRECT_REFERENCE_GOT
               || istate == STATE_INDIRECT_REFERENCE_GOT)) {
         istate = STATE_DATA_VALUE_DESCRIPTOR_GETTING;
         handler.member_expect(new ASN1ObjectDescriptor.XER_Parser_Proxy("data-value-descriptor"));
-        handler.startElement(name, atts);
+        handler.startElement(uri, localName, qName, atts);
 
-      } else if (name.equals("encoding")
+      } else if (localName.equals("encoding")
               && (istate == STATE_EXTERNAL_GETTING
               || istate == STATE_DIRECT_REFERENCE_GOT
               || istate == STATE_INDIRECT_REFERENCE_GOT
               || istate == STATE_DATA_VALUE_DESCRIPTOR_GOT)) {
         istate = STATE_ENCODING_GETTING;
 
-      } else if (name.equals("single-ASN1-type")
+      } else if (localName.equals("single-ASN1-type")
               && istate == STATE_ENCODING_GETTING) {
         istate = STATE_SINGLE_ASN1_TYPE_GETTING;
         throw new org.xml.sax.SAXException("XER Parser: "
                 + "EXTERNAL single-ASN1-type: "
                 + "not implemented yet"); //???
 
-      } else if (name.equals("octet-aligned")
+      } else if (localName.equals("octet-aligned")
               && istate == STATE_ENCODING_GETTING) {
         istate = STATE_OCTET_ALIGNED_GETTING;
         handler.member_expect(new ASN1OctetString.XER_Parser_Proxy("octet-aligned"));
-        handler.startElement(name, atts);
+        handler.startElement(uri, localName, qName, atts);
 
-      } else if (name.equals("arbitrary")
+      } else if (localName.equals("arbitrary")
               && istate == STATE_ENCODING_GETTING) {
         istate = STATE_ARBITRARY_GETTING;
         handler.member_expect(new ASN1BitString.XER_Parser_Proxy("arbitrary"));
-        handler.startElement(name, atts);
+        handler.startElement(uri, localName, qName, atts);
 
       } else {
-        handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, localName);
       }
     }
 
@@ -559,27 +565,47 @@ public final class ASN1External extends ASN1Any {
             throws org.xml.sax.SAXException {
       switch (istate) {
         case STATE_DIRECT_REFERENCE_GETTING:
-          proxy_value.s_direct_reference = (ASN1ObjectIdentifier) result;
+          if (result instanceof ASN1ObjectIdentifier) {
+            proxy_value.s_direct_reference = (ASN1ObjectIdentifier) result;
+          } else {
+            throw new org.xml.sax.SAXException("ASN.1 EXTERNAL: incorrect form, not ASN1ObjectIdentifier");      
+          }
           istate = STATE_DIRECT_REFERENCE_GOT;
           break;
         case STATE_INDIRECT_REFERENCE_GETTING:
-          proxy_value.s_indirect_reference = (ASN1Integer) result;
+          if (result instanceof ASN1Integer) {
+            proxy_value.s_indirect_reference = (ASN1Integer) result;
+          } else {
+            throw new org.xml.sax.SAXException("ASN.1 EXTERNAL: incorrect form, not ASN1Integer");      
+          }
           istate = STATE_INDIRECT_REFERENCE_GOT;
           break;
         case STATE_DATA_VALUE_DESCRIPTOR_GETTING:
-          proxy_value.s_data_value_descriptor = (ASN1ObjectDescriptor) result;
+          if (result instanceof ASN1ObjectDescriptor) {
+            proxy_value.s_data_value_descriptor = (ASN1ObjectDescriptor) result;
+          } else {
+            throw new org.xml.sax.SAXException("ASN.1 EXTERNAL: incorrect form, not ASN1ObjectDescriptor");      
+          }
           istate = STATE_DATA_VALUE_DESCRIPTOR_GOT;
           break;
         case STATE_SINGLE_ASN1_TYPE_GETTING:
-          proxy_value.c_singleASN1type = result;
+            proxy_value.c_singleASN1type = result;
           istate = STATE_ENCODING_GOT;
           break;
         case STATE_OCTET_ALIGNED_GETTING:
-          proxy_value.c_octetAligned = (ASN1OctetString) result;
+          if (result instanceof ASN1OctetString) {
+            proxy_value.c_octetAligned = (ASN1OctetString) result;
+          } else {
+            throw new org.xml.sax.SAXException("ASN.1 EXTERNAL: incorrect form, not ASN1OctetString");      
+          }
           istate = STATE_ENCODING_GOT;
           break;
         case STATE_ARBITRARY_GETTING:
-          proxy_value.c_arbitrary = (ASN1BitString) result;
+          if (result instanceof ASN1BitString) {
+            proxy_value.c_arbitrary = (ASN1BitString) result;
+          } else {
+            throw new org.xml.sax.SAXException("ASN.1 EXTERNAL: incorrect form, not ASN1BitString");      
+          }
           istate = STATE_ENCODING_GOT;
           break;
         default:

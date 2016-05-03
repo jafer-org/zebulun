@@ -12,6 +12,7 @@ package org.jafer.zebulun.asn1;
 
 //----------------------------------------------------------------
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -320,15 +321,17 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
     //----------------
     @Override
     public void startElement(XERsaxHandler handler,
-            String name,
-            org.xml.sax.AttributeList atts)
+            String uri,
+            String localName,
+            String qName,
+            org.xml.sax.Attributes atts)
             throws org.xml.sax.SAXException {
-      if (name.equals(xer_tag)
+      if (localName.equals(xer_tag)
               && state == STATE_INIT) {
         state = STATE_START_GOT;
 
       } else {
-        handler.throw_start_unexpected(xer_tag, name);
+        handler.throw_start_unexpected(xer_tag, localName);
       }
     }
 
@@ -374,7 +377,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
 
           String str = new String(ch, begin, nws_end - begin);
 
-          java.util.Vector vect = new java.util.Vector();
+          ArrayList<Integer> vect = new ArrayList<>();
 
           java.util.StringTokenizer st = new java.util.StringTokenizer(str, ".");
           while (st.hasMoreTokens()) {
@@ -384,7 +387,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
                 handler.throw_characters_unexpected(xer_tag);
               }
 
-              vect.addElement(component);
+              vect.add(component);
             } catch (java.lang.NumberFormatException ex) {
               handler.throw_characters_unexpected(xer_tag);
             }
@@ -397,7 +400,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
           int size = vect.size();
           proxy_value = new int[size];
           for (int x = 0; x < size; x++) {
-            proxy_value[x] = ((java.lang.Integer) vect.elementAt(x));
+            proxy_value[x] = vect.get(x);
           }
 
           // Check that remaining characters are all whitespace
