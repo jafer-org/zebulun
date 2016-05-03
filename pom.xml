@@ -32,19 +32,6 @@
     <maven.build.timestamp.format>EEE, d MMMM, yyyy - HH:mm:ss zzz</maven.build.timestamp.format>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>ceridwen-libs-release</id>
-      <name>Ceridwen Release Repository</name>
-      <url>https://software.ceridwen.com/artifactory/libs-release-local</url>
-    </repository>
-    <repository>
-      <id>ceridwen-libs-snapshot</id>
-      <name>Ceridwen Snapshot Repository</name>
-      <url>https://software.ceridwen.com/artifactory/libs-snapshot-local</url>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
