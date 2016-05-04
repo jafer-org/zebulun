@@ -259,7 +259,7 @@ public final class ASN1ObjectIdentifier extends ASN1Any {
   @Override
   public String
           toString() {
-    StringBuffer str = new StringBuffer();
+    StringBuilder str = new StringBuilder();
 
     for (int index = 0; index < oid.length; index++) {
       if (index != 0) {

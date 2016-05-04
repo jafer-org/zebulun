@@ -175,7 +175,7 @@ public final class ASN1Set extends ASN1Any {
   @Override
   public String
           toString() {
-    StringBuffer str = new StringBuffer("{");
+    StringBuilder str = new StringBuilder("{");
 
     for (int index = 0; index < elements.length; index++) {
       if (index != 0) {

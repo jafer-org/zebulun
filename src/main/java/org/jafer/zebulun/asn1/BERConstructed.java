@@ -113,7 +113,7 @@ public class BERConstructed extends BEREncoding {
   @Override
   public String
           toString() {
-    StringBuffer str = new StringBuffer("[");
+    StringBuilder str = new StringBuilder("[");
     switch (i_tag_type) {
       case BEREncoding.UNIVERSAL_TAG:
         str.append("UNIVERSAL ");
