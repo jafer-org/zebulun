@@ -20,12 +20,20 @@ package org.jafer.zebulun.asn1;
 //----------------------------------------------------------------
 public class ASN1Exception extends Exception {
 
-  public ASN1Exception() {
-    super("ASN.1 exception");
+  public ASN1Exception(String message, Throwable cause) {
+    super(message, cause);
   }
 
   public ASN1Exception(String message) {
     super(message);
+  }
+
+  public ASN1Exception(Throwable cause) {
+   this("ASN.1 exception", cause);
+  }
+  
+  public ASN1Exception() {
+    this("ASN.1 exception");
   }
 }
 

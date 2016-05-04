@@ -20,12 +20,20 @@ package org.jafer.zebulun.asn1;
 //----------------------------------------------------------------
 public class ASN1EncodingException extends ASN1Exception {
 
-  public ASN1EncodingException() {
-    super("ASN.1 encoding exception");
+  public ASN1EncodingException(String message, Throwable cause) {
+    super(message, cause);
   }
 
   public ASN1EncodingException(String message) {
     super(message);
+  }
+
+  public ASN1EncodingException(Throwable cause) {
+    this("ASN.1 encoding exception", cause);
+  }
+
+  public ASN1EncodingException() {
+    this("ASN.1 encoding exception");
   }
 }
 
