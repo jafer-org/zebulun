@@ -239,7 +239,7 @@ public class ASN1OctetString extends ASN1Any {
           toString() {
     int size = octets.length;
     // Buffer: make it big just in case everything needs to be encoded
-    StringBuffer buf = new StringBuffer(32 + (size * 4));
+    StringBuilder buf = new StringBuilder(32 + (size * 4));
 
     // Determine whether to use hexadecimal form or text form
     int printable = 0;
