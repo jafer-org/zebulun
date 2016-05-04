@@ -712,6 +712,7 @@ sub java_ber_decode {
 
 	  print $fp "    part++; // yes, consumed\n";
 	  print $fp "  } catch (ASN1Exception e) {\n";
+    print $fp "    java.util.logging.Logger.getLogger($class_name.class.getName()).log(java.util.logging.Level.FINE, \"$variable not present\", e);\n";
 	  print $fp "    $variable = null; // no, not present\n";
 	  print $fp "  }\n";
 
@@ -915,8 +916,10 @@ sub java_ber_decode {
 	  print $fp "(ber_cons.elementAt(p), check_tag);\n";
 	  print $fp "\n";
 	  print $fp "  } catch (ClassCastException e) {\n";
+    print $fp "    java.util.logging.Logger.getLogger($class_name.class.getName()).log(java.util.logging.Level.FINE, \"failed to decode\", e);\n";
 	  print $fp "    // failed to decode, continue on\n";
 	  print $fp "  } catch (ASN1Exception e) {\n";
+    print $fp "    java.util.logging.Logger.getLogger($class_name.class.getName()).log(java.util.logging.Level.FINE, \"failed to decode\", e);\n";
 	  print $fp "    // failed to decode, continue on\n";
 	  print $fp "  }\n";
 	}
@@ -975,6 +978,7 @@ sub java_ber_decode {
 	  print $fp " = new ", java_class($etype), "(ber, check_tag);\n";
 	  print $fp "    return;\n";
 	  print $fp "  } catch (ASN1Exception e) {\n";
+    print $fp "    java.util.logging.Logger.getLogger($class_name.class.getName()).log(java.util.logging.Level.FINE, \"failed to decode\", e);\n";
 	  print $fp "    // failed to decode, continue on\n";
 	  print $fp "  }\n";
 	  print $fp "\n";
@@ -1370,7 +1374,7 @@ sub java_ber_encode_nonchoice {
       } else {
 	# Explicit tag of simple type, but tagging overrides
 
-	print $fp "    BEREncoding enc[] = new BEREncoding[1];\n";
+	print $fp "    BEREncoding[] enc = new BEREncoding[1];\n";
 	print $fp "    enc[0] = $variable.ber_encode();\n";
 	print $fp "    return new BERConstructed(tag_type, tag, enc);\n";
       }
