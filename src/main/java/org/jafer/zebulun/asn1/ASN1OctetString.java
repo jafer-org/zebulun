@@ -12,6 +12,8 @@ package org.jafer.zebulun.asn1;
 
 import java.io.*;
 import java.util.Arrays;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 //----------------------------------------------------------------
 /**
@@ -190,6 +192,7 @@ public class ASN1OctetString extends ASN1Any {
     try {
       octets = str.getBytes("ISO-8859-1");
     } catch (UnsupportedEncodingException ex) {
+      Logger.getLogger(ASN1OctetString.class.getName()).log(Level.WARNING, "ISO-8859-1 character encoding not supported.", ex);
       octets = str.getBytes();
     }
     return this;
@@ -206,6 +209,7 @@ public class ASN1OctetString extends ASN1Any {
     try {
       return new String(octets, "ISO-8859-1");
     } catch (UnsupportedEncodingException ex) {
+      Logger.getLogger(ASN1OctetString.class.getName()).log(Level.WARNING, "ISO-8859-1 character encoding not supported.", ex);
       return new String(octets);
     }
   }
